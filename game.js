@@ -23,13 +23,13 @@ const LEVELS = {
     celebrateText: "Ember says: Spirals hide in shells and sunflowers — and whole GALAXIES swirl like spirals in space!" },
   flower: { title: "The Great Flower", stages: 1, gem: "🌸", celebrateEmoji: "🌸",
     celebrateText: "Ember says: You grew the Flower of Life — circles holding hands! You are a true Geometry Garden hero, Klausaiyan!" },
-  match: { title: "Match Quest", stages: 4, gem: "🧩", celebrateEmoji: "🧩",
+  match: { title: "Match Quest", stages: 5, gem: "🧩", celebrateEmoji: "🧩",
     celebrateText: "Ember says: Shadow matcher, number matcher, word matcher — you matched them ALL!" },
-  frog: { title: "Frog Coding Pond", stages: 3, gem: "🐸", celebrateEmoji: "🐸",
+  frog: { title: "Frog Coding Pond", stages: 4, gem: "🐸", celebrateEmoji: "🐸",
     celebrateText: "Ember says: You are a CODER now! You told the frog exactly what to do — and it worked!" },
   dj: { title: "DJ Quest", stages: 3, gem: "🎧", celebrateEmoji: "🎧",
     celebrateText: "Ember says: DJ Klausaiyan in the house! You copied beats, finished melodies, and made your OWN music!" },
-  keys: { title: "Keyboard Hero", stages: 2, gem: "⌨️", celebrateEmoji: "⌨️",
+  keys: { title: "Keyboard Hero", stages: 3, gem: "⌨️", celebrateEmoji: "⌨️",
     celebrateText: "Ember says: You typed your name on a keyboard like a real computer hero!" }
 };
 
@@ -103,6 +103,11 @@ function speak(text, isInstruction = false) {
   } catch (e) {}
 }
 
+
+// Defensive helpers: a missing element can never kill the rest of the game.
+function wire(id, fn) { const el = $(id); if (el) el.addEventListener("click", fn); }
+function tg(id, cls, on) { const el = $(id); if (el) el.classList.toggle(cls, on); }
+
 // ===== Screens =====
 function show(id) {
   stopSeq();
@@ -115,20 +120,21 @@ function renderMap() {
     `<span class="gem${gems[k] ? " earned" : ""}">${LEVELS[k].gem}</span>`).join("");
   const earned = keys.filter(k => gems[k]).length;
   $("gardenBed").textContent = earned === 0 ? "🌱 🌱 🌱" : "🌸🌼".repeat(earned) + "🌷";
-  $("worldCircle").classList.toggle("done", !!gems.circle);
-  $("worldHex").classList.toggle("done", !!gems.hex);
-  $("worldPlanet").classList.toggle("done", !!gems.planet);
-  $("worldTriangle").classList.toggle("done", !!gems.triangle);
-  $("worldSquare").classList.toggle("done", !!gems.square);
-  $("worldSpiral").classList.toggle("done", !!gems.spiral);
-  $("worldFlower").classList.toggle("done", !!gems.flower);
-  $("worldFlower").classList.toggle("sleeping", !allWorldsDone() && !gems.flower);
-  $("flowerHint").textContent = gems.flower ? "Bloomed! 🌸" : allWorldsDone() ? "Tap to bloom!" : "Wake all 6 worlds first…";
-  $("worldMatch").classList.toggle("done", !!gems.match);
-  $("worldFrog").classList.toggle("done", !!gems.frog);
-  $("worldDJ").classList.toggle("done", !!gems.dj);
-  $("worldKeys").classList.toggle("done", !!gems.keys);
-  $("factLine").textContent = discoveredFacts.size > 0
+  tg("worldCircle", "done", !!gems.circle);
+  tg("worldHex", "done", !!gems.hex);
+  tg("worldPlanet", "done", !!gems.planet);
+  tg("worldTriangle", "done", !!gems.triangle);
+  tg("worldSquare", "done", !!gems.square);
+  tg("worldSpiral", "done", !!gems.spiral);
+  tg("worldFlower", "done", !!gems.flower);
+  tg("worldFlower", "sleeping", !allWorldsDone() && !gems.flower);
+  const fh = $("flowerHint"); if (fh) fh.textContent = gems.flower ? "Bloomed! 🌸" : allWorldsDone() ? "Tap to bloom!" : "Wake all 6 worlds first…";
+  tg("worldMatch", "done", !!gems.match);
+  tg("worldFrog", "done", !!gems.frog);
+  tg("worldDJ", "done", !!gems.dj);
+  tg("worldKeys", "done", !!gems.keys);
+  const fl = $("factLine");
+  if (fl) fl.textContent = discoveredFacts.size > 0
     ? `⭐ Facts discovered: ${discoveredFacts.size} of ${DISCOVER.length} — keep exploring!`
     : "";
 }
@@ -163,7 +169,8 @@ function renderStage() {
   const fn = { circle: circleStage, hex: hexStage, planet: planetStage,
     triangle: triangleStage, square: squareStage, spiral: spiralStage, flower: flowerStage,
     match: matchStage, frog: frogStage, dj: djStage, keys: keysStage }[key];
-  fn(stage);
+  try { fn(stage); }
+  catch (e) { $("stageMsg").textContent = "Oh no — this world got tangled! Tell Mommy to refresh the page!"; }
 }
 
 function nextStage() {
@@ -1044,7 +1051,11 @@ const DISCOVER = [
   { e: "\uD83E\uDD96", n: "Dino", facts: ["Some dinos were as long as THREE buses!", "Birds are the dinos' living cousins!", "The T-Rex had teeth as big as bananas!"] },
   { e: "\uD83D\uDC38", n: "Frog", facts: ["Frogs start life as tadpoles!", "A frog's eyes help it swallow!", "Some frogs can jump 20 times their own length!"] },
   { e: "\uD83C\uDF38", n: "Flower", facts: ["Circles holding hands can make a flower!", "Flowers feed the bees, and bees help flowers grow!", "The biggest flower in the world is as wide as a car tire!"] },
-  { e: "\uD83D\uDC09", n: "Ember", facts: ["I am Ember, your dragon guide!", "In stories, dragons guard treasure \u2014 I guard YOUR garden!", "Tell someone a fact you learned today, hero!"] }
+  { e: "\uD83D\uDC09", n: "Ember", facts: ["I am Ember, your dragon guide!", "In stories, dragons guard treasure \u2014 I guard YOUR garden!", "Tell someone a fact you learned today, hero!"] },
+  { e: "\uD83C\uDF0C", n: "Milky Way", facts: ["Our galaxy is called the Milky Way!", "The Milky Way is a giant SPIRAL of stars!", "There are more stars in space than grains of sand on all the beaches!"] },
+  { e: "\u2604\uFE0F", n: "Comet", facts: ["Comets are giant dirty snowballs in space!", "A comet's tail always points AWAY from the Sun!", "Halley's Comet comes back to visit every 76 years!"] },
+  { e: "\uD83D\uDEF0\uFE0F", n: "Space Station", facts: ["Astronauts LIVE on the International Space Station!", "The Space Station flies around Earth in only 90 minutes!", "From the Space Station, astronauts see 16 sunrises every day!"] },
+  { e: "\uD83E\uDDD1\u200D\uD83D\uDE80", n: "Astronaut", facts: ["Astronauts float in space \u2014 there is no up or down!", "NASA is training astronauts to go back to the Moon!", "A footprint on the Moon can stay there for millions of years!"] }
 ];
 
 function loadFacts() {
@@ -1281,6 +1292,12 @@ function matchStage(stage) {
     }
     renderShapeWord();
   }
+
+  if (stage === 4) {
+    countSidesStage("octagon", [[32, 6], [68, 6], [94, 32], [94, 68], [68, 94], [32, 94], [6, 68], [6, 32]], "#ff6b57",
+      "Shape Detective! This is an OCTAGON — like a stop sign! Count its sides!",
+      "Eight! An octagon has EIGHT sides!");
+  }
 }
 
 // ===== FROG CODING POND =====
@@ -1292,8 +1309,11 @@ function frogStage(stage) {
     : stage === 1
     ? { cells: 7, target: 6, big: true,
         intro: "A bigger pond! Use HOP and BIG JUMP to code the frog to the fly!" }
-    : { cells: 9, target: 8, big: true,
-        intro: "The LONG pond! Plan your code like a real coder, then press GO!" };
+    : stage === 2
+    ? { cells: 9, target: 8, big: true,
+        intro: "The LONG pond! Plan your code like a real coder, then press GO!" }
+    : { cells: 9, target: 8, big: true, loop: true,
+        intro: "Loop Lagoon! The LOOP block says DO THAT AGAIN. Coders use loops to repeat!" };
   speak(cfg.intro, true);
 
   const STEP = 66;
@@ -1325,7 +1345,7 @@ function frogStage(stage) {
 
   let code = [];
   let running = false;
-  const ICONS = { hop: "\u27A1\uFE0F", big: "\u23EB", spin: "\uD83C\uDF00" };
+  const ICONS = { hop: "\u27A1\uFE0F", big: "\u23EB", spin: "\uD83C\uDF00", loop: "\uD83D\uDD01" };
 
   function renderCode() {
     codeRow.textContent = code.length ? code.map(c => ICONS[c]).join(" ") : "\u2026";
@@ -1348,16 +1368,24 @@ function frogStage(stage) {
   makeBtn("\u27A1\uFE0F Hop", "", () => addCmd("hop"));
   if (cfg.big) makeBtn("\u23EB Big Jump", "", () => addCmd("big"));
   makeBtn("\uD83C\uDF00 Spin", "", () => addCmd("spin"));
+  if (cfg.loop) makeBtn("\uD83D\uDD01 Loop", "", () => addCmd("loop"));
   makeBtn("\u21BA Clear", "", () => { if (!running) { code = []; renderCode(); tone(300, 0, 0.12); } });
   makeBtn("\u25B6\uFE0F GO!", "cmd-go", () => {
     if (running || code.length === 0) { if (!running) speak("Write some code first, coder! Tap HOP!"); return; }
     running = true;
+    const expanded = [];
+    code.forEach(c => {
+      if (c === "loop") {
+        const last = [...expanded].reverse().find(x => x === "hop" || x === "big");
+        if (last) expanded.push(last);
+      } else expanded.push(c);
+    });
     let pos = 0;
     frog.style.left = "3px";
     let i = 0;
     speak("Running your code!");
     function step() {
-      if (i >= code.length) {
+      if (i >= expanded.length) {
         running = false;
         if (pos === cfg.target) {
           fanfare();
@@ -1372,7 +1400,7 @@ function frogStage(stage) {
         }
         return;
       }
-      const c = code[i];
+      const c = expanded[i];
       i += 1;
       if (c === "hop") pos += 1;
       if (c === "big") pos += 2;
@@ -1448,8 +1476,11 @@ function keysStage(stage) {
   const cfg = stage === 0
     ? { word: "KLAUS", keys: ["K", "M", "L", "B", "A", "T", "U", "S"],
         intro: "Keyboard Hero! Type your name! Tap the keys: K, L, A, U, S!" }
-    : { word: "MOON", keys: ["M", "A", "O", "S", "N", "E"],
-        intro: "Type the word MOON, computer hero!" };
+    : stage === 1
+    ? { word: "MOON", keys: ["M", "A", "O", "S", "N", "E"],
+        intro: "Type the word MOON, computer hero!" }
+    : { word: "CODE", keys: ["C", "A", "O", "S", "D", "T", "E"],
+        intro: "Type CODE \u2014 the secret word of computer heroes!" };
   speak(cfg.intro, true);
 
   const wordRow = document.createElement("div");
@@ -1745,31 +1776,31 @@ function djStage(stage) {
   $("nameLetters").appendChild(b);
 });
 
-$("playBtn").addEventListener("click", () => {
+wire("playBtn", () => {
   tone(660, 0, 0.2);
   renderMap();
   show("screenMap");
   speak("Hello, Klausaiyan! Choose a world, hero!");
 });
-$("worldCircle").addEventListener("click", () => startLevel("circle"));
-$("worldHex").addEventListener("click", () => startLevel("hex"));
-$("worldPlanet").addEventListener("click", () => startLevel("planet"));
-$("worldTriangle").addEventListener("click", () => startLevel("triangle"));
-$("worldSquare").addEventListener("click", () => startLevel("square"));
-$("worldSpiral").addEventListener("click", () => startLevel("spiral"));
-$("worldMatch").addEventListener("click", () => startLevel("match"));
-$("worldFrog").addEventListener("click", () => startLevel("frog"));
-$("worldDJ").addEventListener("click", () => startLevel("dj"));
-$("worldKeys").addEventListener("click", () => startLevel("keys"));
-$("worldDiscover").addEventListener("click", () => openDiscover());
-$("discoverBack").addEventListener("click", () => { renderMap(); show("screenMap"); });
-$("homeBtn").addEventListener("click", () => {
+wire("worldCircle", () => startLevel("circle"));
+wire("worldHex", () => startLevel("hex"));
+wire("worldPlanet", () => startLevel("planet"));
+wire("worldTriangle", () => startLevel("triangle"));
+wire("worldSquare", () => startLevel("square"));
+wire("worldSpiral", () => startLevel("spiral"));
+wire("worldMatch", () => startLevel("match"));
+wire("worldFrog", () => startLevel("frog"));
+wire("worldDJ", () => startLevel("dj"));
+wire("worldKeys", () => startLevel("keys"));
+wire("worldDiscover", () => openDiscover());
+wire("discoverBack", () => { renderMap(); show("screenMap"); });
+wire("homeBtn", () => {
   current = null;
   try { speechSynthesis.cancel(); } catch (e) {}
   show("screenTitle");
   speak("Home! Hello, Klausaiyan!");
 });
-$("worldFlower").addEventListener("click", () => {
+wire("worldFlower", () => {
   if (!allWorldsDone() && !gems.flower) {
     tone(300, 0, 0.15);
     speak("The Great Flower is still sleeping. Wake all six worlds first, hero!");
@@ -1777,27 +1808,27 @@ $("worldFlower").addEventListener("click", () => {
   }
   startLevel("flower");
 });
-$("backToMap").addEventListener("click", () => {
+wire("backToMap", () => {
   current = null;
   try { speechSynthesis.cancel(); } catch (e) {}
   renderMap();
   show("screenMap");
 });
-$("repeatBtn").addEventListener("click", () => {
+wire("repeatBtn", () => {
   if (lastInstruction) speak(lastInstruction, true);
   else speak("You can do it, hero!");
 });
-$("celebrateBtn").addEventListener("click", () => {
+wire("celebrateBtn", () => {
   $("celebrate").classList.add("hidden");
   renderMap();
   show("screenMap");
 });
-$("muteBtn").addEventListener("click", () => {
+wire("muteBtn", () => {
   muted = !muted;
   $("muteBtn").textContent = muted ? "🔇" : "🔊";
   if (muted) { try { speechSynthesis.cancel(); } catch (e) {} }
 });
-$("resetBtn").addEventListener("click", () => {
+wire("resetBtn", () => {
   gems = {};
   saveGems();
   renderMap();
