@@ -471,3 +471,8 @@ body::before {
   .seq-cell { width: 42px; height: 46px; }
   .key-btn { width: 62px; height: 62px; }
 }
+
+
+/* ===== Round 6: new shapes ===== */
+.shape.octagon { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); }
+.shape.pentagon { clip-path: polygon(50% 0%, 100% 38%, 81% 100%, 19% 100%, 0% 38%); }
