@@ -22,7 +22,24 @@ const LEVELS = {
   spiral: { title: "Spiral Shell Beach", stages: 4, gem: "🐚", celebrateEmoji: "🌀",
     celebrateText: "Ember says: Spirals hide in shells and sunflowers — and whole GALAXIES swirl like spirals in space!" },
   flower: { title: "The Great Flower", stages: 1, gem: "🌸", celebrateEmoji: "🌸",
-    celebrateText: "Ember says: You grew the Flower of Life — circles holding hands! You are a true Geometry Garden hero, Klausaiyan!" }
+    celebrateText: "Ember says: You grew the Flower of Life — circles holding hands! You are a true Geometry Garden hero, Klausaiyan!" },
+  match: { title: "Match Quest", stages: 3, gem: "🧩", celebrateEmoji: "🧩",
+    celebrateText: "Ember says: Shadow matcher, number matcher, word matcher — you matched them ALL!" },
+  frog: { title: "Frog Coding Pond", stages: 2, gem: "🐸", celebrateEmoji: "🐸",
+    celebrateText: "Ember says: You are a CODER now! You told the frog exactly what to do — and it worked!" }
+};
+
+// Show-and-tell missions: something to go teach/show another human after each world.
+const TELLS = {
+  circle: "🌟 Show & Tell Mission: find a circle in the kitchen and announce, “Circles have NO corners!”",
+  hex: "🌟 Show & Tell Mission: tell someone, “Bees build hexagons — they have SIX sides!”",
+  planet: "🌟 Show & Tell Mission: point at the sky tonight and name a planet for someone!",
+  triangle: "🌟 Show & Tell Mission: find a triangle somewhere and tell someone it's the STRONGEST shape!",
+  square: "🌟 Show & Tell Mission: stack some blocks and count the sides of a square out loud!",
+  spiral: "🌟 Show & Tell Mission: find a spiral — a shell, a snail, a swirl — and show someone!",
+  flower: "🌟 Show & Tell Mission: draw a flower made of circles for someone you love!",
+  match: "🌟 Show & Tell Mission: match a pair of socks and tell someone HOW you knew they match!",
+  frog: "🌟 Show & Tell Mission: give someone three instructions — hop, spin, hop — and watch them follow YOUR code!"
 };
 
 const WORLD_KEYS = ["circle", "hex", "planet", "triangle", "square", "spiral"];
@@ -79,7 +96,7 @@ function speak(text, isInstruction = false) {
 
 // ===== Screens =====
 function show(id) {
-  ["screenTitle", "screenMap", "screenLevel"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  ["screenTitle", "screenMap", "screenLevel", "screenDiscover"].forEach(s => $(s).classList.toggle("hidden", s !== id));
 }
 
 function renderMap() {
@@ -97,6 +114,11 @@ function renderMap() {
   $("worldFlower").classList.toggle("done", !!gems.flower);
   $("worldFlower").classList.toggle("sleeping", !allWorldsDone() && !gems.flower);
   $("flowerHint").textContent = gems.flower ? "Bloomed! 🌸" : allWorldsDone() ? "Tap to bloom!" : "Wake all 6 worlds first…";
+  $("worldMatch").classList.toggle("done", !!gems.match);
+  $("worldFrog").classList.toggle("done", !!gems.frog);
+  $("factLine").textContent = discoveredFacts.size > 0
+    ? `⭐ Facts discovered: ${discoveredFacts.size} of ${DISCOVER.length} — keep exploring!`
+    : "";
 }
 
 function sparkles() {
@@ -126,7 +148,8 @@ function renderStage() {
   $("stageDots").textContent = "● ".repeat(stage + 1) + "○ ".repeat(total - stage - 1);
   $("stageArea").innerHTML = "";
   const fn = { circle: circleStage, hex: hexStage, planet: planetStage,
-    triangle: triangleStage, square: squareStage, spiral: spiralStage, flower: flowerStage }[key];
+    triangle: triangleStage, square: squareStage, spiral: spiralStage, flower: flowerStage,
+    match: matchStage, frog: frogStage }[key];
   fn(stage);
 }
 
@@ -146,6 +169,7 @@ function completeLevel() {
   $("celebrateEmoji").textContent = LEVELS[key].celebrateEmoji;
   $("celebrateTitle").textContent = "You did it, Klausaiyan!";
   $("celebrateText").textContent = LEVELS[key].celebrateText;
+  $("celebrateTell").textContent = TELLS[key] || "";
   $("celebrate").classList.remove("hidden");
   for (let i = 0; i < 14; i++) {
     const s = document.createElement("span");
@@ -950,6 +974,321 @@ function flowerStage(stage) {
 }
 
 
+
+// ===== DISCOVERY GARDEN (free explore — tap everything, learn everything) =====
+const DISCOVER = [
+  { e: "\uD83C\uDF15", n: "Moon", facts: ["The Moon is round like a circle!", "The Moon does not make its own light \u2014 the Sun lights it up!", "People have walked on the Moon!"] },
+  { e: "\u2600\uFE0F", n: "Sun", facts: ["The Sun is a STAR, not a planet!", "The Sun is SO big, a million Earths could fit inside!", "Sunlight takes 8 minutes to reach us!"] },
+  { e: "\uD83E\uDE90", n: "Saturn", facts: ["Saturn's rings are made of ice and rock!", "Saturn could FLOAT in a giant bathtub!", "Saturn has more moons than any other planet!"] },
+  { e: "\uD83D\uDE80", n: "Rocket", facts: ["Rockets count down: 5, 4, 3, 2, 1 \u2014 blast off!", "The first rocket to the Moon was called Apollo 11!", "Astronauts float inside their rocket \u2014 no gravity!"] },
+  { e: "\uD83D\uDC1D", n: "Bee", facts: ["Bees build hexagons \u2014 shapes with six sides!", "A bee visits about fifty flowers on one trip!", "Bees tell their friends where flowers are by DANCING!"] },
+  { e: "\u2B21", n: "Hexagon", facts: ["A hexagon has SIX sides!", "Hexagons fit together with NO gaps!", "Snowflakes are tiny hexagons!"] },
+  { e: "\uD83D\uDD3A", n: "Triangle", facts: ["Triangles are the STRONGEST shape!", "A triangle has 3 sides and 3 corners!", "Mountains and bridges wear triangle shapes!"] },
+  { e: "\uD83C\uDF00", n: "Spiral", facts: ["Spirals hide inside shells!", "Sunflowers grow their seeds in spirals!", "Our whole GALAXY is a giant spiral of stars!"] },
+  { e: "\uD83E\uDD96", n: "Dino", facts: ["Some dinos were as long as THREE buses!", "Birds are the dinos' living cousins!", "The T-Rex had teeth as big as bananas!"] },
+  { e: "\uD83D\uDC38", n: "Frog", facts: ["Frogs start life as tadpoles!", "A frog's eyes help it swallow!", "Some frogs can jump 20 times their own length!"] },
+  { e: "\uD83C\uDF38", n: "Flower", facts: ["Circles holding hands can make a flower!", "Flowers feed the bees, and bees help flowers grow!", "The biggest flower in the world is as wide as a car tire!"] },
+  { e: "\uD83D\uDC09", n: "Ember", facts: ["I am Ember, your dragon guide!", "In stories, dragons guard treasure \u2014 I guard YOUR garden!", "Tell someone a fact you learned today, hero!"] }
+];
+
+function loadFacts() {
+  try { return new Set(JSON.parse(localStorage.getItem("klausaiyanFacts")) || []); }
+  catch (e) { return new Set(); }
+}
+function saveFacts() {
+  try { localStorage.setItem("klausaiyanFacts", JSON.stringify([...discoveredFacts])); } catch (e) {}
+}
+let discoveredFacts = loadFacts();
+
+function openDiscover() {
+  show("screenDiscover");
+  const grid = $("discoverGrid");
+  grid.innerHTML = "";
+  $("discoverCount").textContent = `\u2B50 Facts discovered: ${discoveredFacts.size} of ${DISCOVER.length}`;
+  DISCOVER.forEach(item => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "discover-btn" + (discoveredFacts.has(item.n) ? " found" : "");
+    b.innerHTML = `<span class="d-emoji">${item.e}</span><span class="d-name">${item.n}</span>`;
+    let idx = 0;
+    b.addEventListener("click", () => {
+      chime(4);
+      speak(item.facts[idx % item.facts.length]);
+      idx += 1;
+      if (!discoveredFacts.has(item.n)) {
+        discoveredFacts.add(item.n);
+        saveFacts();
+        b.classList.add("found");
+        $("discoverCount").textContent = `\u2B50 Facts discovered: ${discoveredFacts.size} of ${DISCOVER.length}`;
+      }
+      for (let i = 0; i < 5; i++) {
+        const s = document.createElement("span");
+        s.className = "sparkle";
+        s.textContent = "\u2728";
+        s.style.left = (10 + Math.random() * 80) + "%";
+        s.style.top = (10 + Math.random() * 60) + "%";
+        $("screenDiscover").appendChild(s);
+        setTimeout(() => s.remove(), 1000);
+      }
+    });
+    grid.appendChild(b);
+  });
+  speak("Explore, hero! Tap anything, and learn its secret!");
+}
+
+// ===== MATCH QUEST =====
+function matchStage(stage) {
+  const area = $("stageArea");
+
+  if (stage === 0) {
+    speak("Match each shape to its SHADOW! Tap a shape, then tap its shadow!", true);
+    const pieces = [
+      { type: "triangle", color: "#ff9ecb" },
+      { type: "circle", color: "#7ecbff" },
+      { type: "hexagon", color: "#ffd94d" }
+    ];
+    const shadowOrder = ["hexagon", "circle", "triangle"];
+    let selected = null, matched = 0;
+
+    const shadowRow = document.createElement("div");
+    shadowRow.className = "shape-grid";
+    const slots = shadowOrder.map(t => {
+      const s = document.createElement("button");
+      s.type = "button";
+      s.className = "shape-btn";
+      s.dataset.type = t;
+      const sh = shapeDiv(t, "#0d0820");
+      sh.classList.add("shadow-shape");
+      s.appendChild(sh);
+      s.addEventListener("click", () => {
+        if (s.classList.contains("found")) return;
+        if (!selected) { speak("Pick a colored shape first!"); return; }
+        if (s.dataset.type === selected.type) {
+          sh.style.background = selected.color;
+          s.classList.add("found");
+          selected.btn.classList.add("found");
+          selected.btn.classList.remove("selected");
+          selected.btn.innerHTML = "\u2B50";
+          selected.btn.style.fontSize = "3em";
+          const tname = selected.type;
+          selected = null;
+          matched += 1;
+          chime(matched + 3);
+          if (matched >= 3) { speak("You matched ALL the shadows!"); setTimeout(nextStage, 1200); }
+          else speak("You matched the " + tname + "!");
+        } else {
+          s.classList.remove("wobble"); void s.offsetWidth; s.classList.add("wobble");
+          speak("That's the " + s.dataset.type + " shadow. Find the " + selected.type + " shadow!");
+        }
+      });
+      shadowRow.appendChild(s);
+      return s;
+    });
+    area.appendChild(shadowRow);
+
+    const pieceRow = document.createElement("div");
+    pieceRow.className = "shape-grid";
+    pieces.forEach(pc => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "shape-btn";
+      b.appendChild(shapeDiv(pc.type, pc.color));
+      b.addEventListener("click", () => {
+        if (b.classList.contains("found")) return;
+        pieceRow.querySelectorAll(".shape-btn").forEach(x => x.classList.remove("selected"));
+        b.classList.add("selected");
+        selected = { type: pc.type, color: pc.color, btn: b };
+        chime(2);
+        speak(pc.type.charAt(0).toUpperCase() + pc.type.slice(1) + "! Now find its shadow!");
+      });
+      pieceRow.appendChild(b);
+    });
+    area.appendChild(pieceRow);
+  }
+
+  if (stage === 1) {
+    const rounds = [
+      { n: 4, groups: [3, 4, 6] },
+      { n: 6, groups: [5, 6, 4] },
+      { n: 3, groups: [2, 3, 5] }
+    ];
+    let r = 0;
+    function renderRound() {
+      area.innerHTML = "";
+      const target = rounds[r];
+      speak("Match the number! Find the group with " + NUM[target.n].toUpperCase() + " stars!", true);
+      const big = document.createElement("div");
+      big.className = "big-number";
+      big.textContent = target.n;
+      area.appendChild(big);
+      const row = document.createElement("div");
+      row.className = "shape-grid";
+      target.groups.forEach(g => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "group-btn";
+        b.textContent = "\u2B50".repeat(g);
+        b.addEventListener("click", () => {
+          if (g === target.n) {
+            fanfare();
+            r += 1;
+            if (r >= rounds.length) { speak("You matched ALL the numbers! Counting hero!"); setTimeout(nextStage, 1400); }
+            else { speak("Yes! " + NUM[g] + " stars!"); setTimeout(renderRound, 1200); }
+          } else {
+            b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+            speak("Count those stars out loud! Find " + target.n + "!");
+          }
+        });
+        row.appendChild(b);
+      });
+      area.appendChild(row);
+    }
+    renderRound();
+  }
+
+  if (stage === 2) {
+    const targets = [["\uD83C\uDF19", "MOON"], ["\uD83D\uDC1D", "BEE"], ["\u2600\uFE0F", "SUN"]];
+    const allWords = ["MOON", "BEE", "SUN", "EGG"];
+    let r = 0;
+    function renderTarget() {
+      area.innerHTML = "";
+      const [emoji, word] = targets[r];
+      speak("Read the word! Find the word that matches the picture: " + word + "!", true);
+      const big = document.createElement("div");
+      big.style.fontSize = "4.4em";
+      big.textContent = emoji;
+      area.appendChild(big);
+      const wrap = document.createElement("div");
+      wrap.className = "word-cards";
+      allWords.forEach(w => {
+        const c = document.createElement("button");
+        c.type = "button";
+        c.className = "word-card";
+        c.innerHTML = `<span class="wc-word">${w}</span>`;
+        c.addEventListener("click", () => {
+          if (w === word) {
+            c.classList.add("right");
+            fanfare();
+            r += 1;
+            if (r >= targets.length) { speak("You READ the words and matched them ALL!"); setTimeout(nextStage, 1400); }
+            else { speak("Yes! That says " + word + "!"); setTimeout(renderTarget, 1200); }
+          } else {
+            c.classList.remove("wobble"); void c.offsetWidth; c.classList.add("wobble");
+            speak("That word is " + w + ". Find " + word + "!");
+          }
+        });
+        wrap.appendChild(c);
+      });
+      area.appendChild(wrap);
+    }
+    renderTarget();
+  }
+}
+
+// ===== FROG CODING POND =====
+function frogStage(stage) {
+  const area = $("stageArea");
+  const cfg = stage === 0
+    ? { cells: 5, target: 4, big: false,
+        intro: "You are the CODER! Tap HOP to write code for the frog. Then press GO!" }
+    : { cells: 7, target: 6, big: true,
+        intro: "A bigger pond! Use HOP and BIG JUMP to code the frog to the fly!" };
+  speak(cfg.intro, true);
+
+  const STEP = 66;
+  const pond = document.createElement("div");
+  pond.className = "frog-pond";
+  pond.style.width = (cfg.cells * STEP + 6) + "px";
+  for (let i = 0; i < cfg.cells; i++) {
+    const cell = document.createElement("div");
+    cell.className = "pond-cell";
+    cell.style.left = (i * STEP + 3) + "px";
+    cell.textContent = i === cfg.target ? "\uD83E\uDEB0" : "\uD83E\uDEB7";
+    pond.appendChild(cell);
+  }
+  const frog = document.createElement("div");
+  frog.className = "frog";
+  frog.textContent = "\uD83D\uDC38";
+  frog.style.left = "3px";
+  pond.appendChild(frog);
+  area.appendChild(pond);
+
+  const codeRow = document.createElement("div");
+  codeRow.className = "code-row";
+  codeRow.textContent = "\u2026";
+  area.appendChild(codeRow);
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "cmd-row";
+  area.appendChild(btnRow);
+
+  let code = [];
+  let running = false;
+  const ICONS = { hop: "\u27A1\uFE0F", big: "\u23EB", spin: "\uD83C\uDF00" };
+
+  function renderCode() {
+    codeRow.textContent = code.length ? code.map(c => ICONS[c]).join(" ") : "\u2026";
+  }
+  function addCmd(c) {
+    if (running) return;
+    code.push(c);
+    chime(3);
+    renderCode();
+  }
+  function makeBtn(label, cls, fn) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cmd-btn " + cls;
+    b.textContent = label;
+    b.addEventListener("click", fn);
+    btnRow.appendChild(b);
+    return b;
+  }
+  makeBtn("\u27A1\uFE0F Hop", "", () => addCmd("hop"));
+  if (cfg.big) makeBtn("\u23EB Big Jump", "", () => addCmd("big"));
+  makeBtn("\uD83C\uDF00 Spin", "", () => addCmd("spin"));
+  makeBtn("\u21BA Clear", "", () => { if (!running) { code = []; renderCode(); tone(300, 0, 0.12); } });
+  makeBtn("\u25B6\uFE0F GO!", "cmd-go", () => {
+    if (running || code.length === 0) { if (!running) speak("Write some code first, coder! Tap HOP!"); return; }
+    running = true;
+    let pos = 0;
+    frog.style.left = "3px";
+    let i = 0;
+    speak("Running your code!");
+    function step() {
+      if (i >= code.length) {
+        running = false;
+        if (pos === cfg.target) {
+          fanfare();
+          speak("YOU DID IT! You coded the frog right to the fly! Coding is telling the computer what to do!");
+          setTimeout(nextStage, 1800);
+        } else if (pos < cfg.target) {
+          speak("The frog stopped at pad " + pos + ". The fly is at pad " + cfg.target + ". Add more code!");
+        } else {
+          frog.textContent = "\uD83D\uDCA6";
+          speak("SPLASH! Too many hops! Clear the code and try again, coder!");
+          setTimeout(() => { frog.textContent = "\uD83D\uDC38"; frog.style.left = "3px"; code = []; renderCode(); }, 1300);
+        }
+        return;
+      }
+      const c = code[i];
+      i += 1;
+      if (c === "hop") pos += 1;
+      if (c === "big") pos += 2;
+      if (c === "spin") {
+        frog.classList.remove("spin"); void frog.offsetWidth; frog.classList.add("spin");
+        chime(5);
+      } else {
+        frog.style.left = (pos * STEP + 3) + "px";
+        chime(2);
+      }
+      setTimeout(step, 620);
+    }
+    setTimeout(step, 350);
+  });
+}
+
+
 // ===== Wiring =====
 "KLAUSAIYAN".split("").forEach((letter, i) => {
   const b = document.createElement("button");
@@ -972,6 +1311,16 @@ $("worldPlanet").addEventListener("click", () => startLevel("planet"));
 $("worldTriangle").addEventListener("click", () => startLevel("triangle"));
 $("worldSquare").addEventListener("click", () => startLevel("square"));
 $("worldSpiral").addEventListener("click", () => startLevel("spiral"));
+$("worldMatch").addEventListener("click", () => startLevel("match"));
+$("worldFrog").addEventListener("click", () => startLevel("frog"));
+$("worldDiscover").addEventListener("click", () => openDiscover());
+$("discoverBack").addEventListener("click", () => { renderMap(); show("screenMap"); });
+$("homeBtn").addEventListener("click", () => {
+  current = null;
+  try { speechSynthesis.cancel(); } catch (e) {}
+  show("screenTitle");
+  speak("Home! Hello, Klausaiyan!");
+});
 $("worldFlower").addEventListener("click", () => {
   if (!allWorldsDone() && !gems.flower) {
     tone(300, 0, 0.15);
