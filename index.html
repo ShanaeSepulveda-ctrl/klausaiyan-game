@@ -1,191 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Fairy's Trail: Eternal Rhythm</title>
-    <style>
-        body { margin: 0; background-color: #050510; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: #ffebcd; font-family: "Georgia", serif; overflow: hidden; touch-action: none; }
-        #gameContainer { position: relative; box-shadow: 0 0 100px rgba(100, 200, 255, 0.1); border-radius: 12px; }
-        canvas { background: radial-gradient(circle at center, #0f0f1a 0%, #000 100%); border-radius: 12px; display: block; }
-        #uiLayer { position: absolute; top: 20px; left: 20px; pointer-events: none; text-shadow: 0 2px 4px black; z-index: 10; }
-        #startButton { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; padding: 20px 40px; font-size: 22px; border-radius: 50px; cursor: pointer; backdrop-filter: blur(10px); z-index: 100; }
-        #overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 10, 20, 0.98); border: 1px solid rgba(255, 215, 0, 0.2); padding: 40px; border-radius: 20px; text-align: center; display: none; width: 85%; max-width: 500px; box-shadow: 0 30px 80px black; z-index: 50; }
-        .btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; align-items: center; }
-        button.action-btn { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); border: none; color: #222; padding: 15px 35px; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 30px; width: 100%; }
-        button.reset-btn { background: transparent; border: 1px solid #444; color: #777; padding: 8px 16px; font-size: 13px; cursor: pointer; border-radius: 30px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Klausaiyan and the Geometry Garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
-        <button id="startButton">Begin the Dance</button>
-        <div id="uiLayer">
-            <div id="levelDisplay" style="font-size: 18px; color: #ffd700; letter-spacing: 1px;">Cycle 1: Awakening</div>
-            <div id="scoreDisplay" style="font-size: 12px; opacity: 0.6; margin-top: 5px;">Energy: 0</div>
-        </div>
-        <div id="overlay">
-            <div id="overlayIcon" style="font-size: 70px; margin-bottom: 20px; filter: drop-shadow(0 0 10px white);">🌱</div>
-            <p id="overlayText" style="font-size: 18px; line-height: 1.6; font-style: italic;">Quote</p>
-            <span id="overlayAuthor" style="color: #ffd700; display: block; margin-top: 10px; font-size: 14px;">- Author</span>
-            <div class="btn-group">
-                <button id="btnPrimary" class="action-btn" onclick="handlePrimaryBtn()">Absorb Wisdom</button>
-                <button id="btnSecondary" class="reset-btn" onclick="handleSecondaryBtn()" style="display:none;">Return to Roots (Level 1)</button>
-            </div>
-        </div>
-    </div>
 
-<script>
-    const GRID_SIZE = 20;
-    const CHAKRA_COLORS = ["#ff7675", "#fab1a0", "#ffeaa7", "#55efc4", "#74b9ff", "#a29bfe", "#dfe6e9"];
-    const LORE_DB = [
-        {level: 1, icon: "🐢", text: "The Great Turtle carries the world. We must walk softly to respect her strength.", author: "Haudenosaunee Wisdom"},
-        {level: 1, icon: "🍂", text: "The forest is a social network. Trees talk to each other through the soil.", author: "Earth Wisdom"},
-        {level: 1, icon: "🌙", text: "The moon doesn't compete with the sun. It shines when it's time.", author: "Ancestral Whisper"},
-        {level: 2, icon: "🌊", text: "Be like water. It finds its way through every crack without force.", author: "Lao Tzu"},
-        {level: 2, icon: "💧", text: "A single drop of rain can start a flood of change.", author: "Nature's Truth"},
-        {level: 3, icon: "🔥", text: "The fire inside you is a piece of the sun. Keep it bright.", author: "Rumi"},
-        {level: 4, icon: "🦌", text: "To love a thing is to know its soul. Connect with the earth with your heart.", author: "Ancient Proverb"},
-        {level: 5, icon: "🗣️", text: "Your voice is a vibration. Speak beauty into the world.", author: "Truth Seeker"},
-        {level: 6, icon: "👁️", text: "The eyes of the soul see further than the eyes of the face.", author: "Spirit Guide"},
-        {level: 7, icon: "✨", text: "We are the universe experiencing itself in human form.", author: "Cosmic Insight"}
-    ];
+<div class="topbar">
+  <span class="top-title">✦ Klausaiyan ✦</span>
+  <div class="top-buttons">
+    <button id="muteBtn" class="round-btn" type="button" aria-label="Turn sound off or on">🔊</button>
+    <button id="resetBtn" class="round-btn" type="button" aria-label="Start the garden over">↺</button>
+  </div>
+</div>
 
-    let canvas, ctx, cellSize, snake, direction, nextDirection, food, obstacles = [], particles = [], score = 0, level = 1, isPaused = false, isGameOver = false, isRunning = false, time = 0;
+<!-- ===== TITLE SCREEN ===== -->
+<section id="screenTitle" class="screen">
+  <div class="big-moon">🌕</div>
+  <h1 class="game-title">Klausaiyan</h1>
+  <p class="game-subtitle">and the Geometry Garden</p>
 
-    window.onload = () => {
-        canvas = document.getElementById('gameCanvas');
-        ctx = canvas.getContext('2d');
-        resize();
-        window.addEventListener('resize', resize);
-        document.getElementById('startButton').onclick = start;
-        document.addEventListener('keydown', key);
-        canvas.addEventListener('touchstart', touchS, {passive: false});
-        canvas.addEventListener('touchmove', touchM, {passive: false});
-    };
+  <div id="nameLetters" class="name-letters" aria-label="The letters of Klausaiyan"></div>
+  <p class="tap-hint">Tap the letters!</p>
 
-    function resize() { let s = Math.min(window.innerWidth, window.innerHeight) - 40; canvas.width = canvas.height = s; cellSize = s / GRID_SIZE; }
+  <div class="story-card">
+    <span class="ember">🐉</span>
+    <p>Ember the dragon is waiting for you, Klausaiyan!<br>
+    The garden flowers fell asleep. Only a shape hero can wake them up…</p>
+  </div>
 
-    function start() { document.getElementById('startButton').style.display = 'none'; isRunning = true; reset(1); loop(); }
+  <button id="playBtn" class="big-play" type="button">▶ &nbsp;Play!</button>
+</section>
 
-    function reset(l) {
-        level = l; score = (l-1)*150; snake = [{x:10, y:10}]; direction = nextDirection = {x:1, y:0};
-        obstacles = []; particles = []; isPaused = isGameOver = false;
-        genObs(); spawnF(); updateUI();
-        document.getElementById('overlay').style.display = 'none';
-    }
+<!-- ===== GARDEN MAP ===== -->
+<section id="screenMap" class="screen hidden">
+  <h2 class="screen-heading">The Geometry Garden</h2>
+  <p class="screen-sub">Tap a glowing world!</p>
 
-    function loop(t) {
-        if (!isRunning) return;
-        let speed = 4 + (level * 0.5); // Slower initial speed
-        if (t - (loop.last || 0) > 1000/speed) {
-            if (!isPaused && !isGameOver) update();
-            loop.last = t;
-        }
-        draw();
-        requestAnimationFrame(loop);
-    }
+  <div id="gemRow" class="gem-row" aria-label="Gems you have found"></div>
+  <div id="gardenBed" class="garden-bed" aria-label="Your growing garden"></div>
 
-    function update() {
-        direction = nextDirection;
-        let h = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
-        if (h.x<0 || h.x>=GRID_SIZE || h.y<0 || h.y>=GRID_SIZE || col(h, snake) || col(h, obstacles)) { gameOver(); return; }
-        snake.unshift(h);
-        if (h.x === food.x && h.y === food.y) {
-            if(food.data) { isPaused = true; show(food.data); score += 50; } else score += 10;
-            if(score > level*150) { level++; genObs(); }
-            spawnF(); updateUI();
-        } else snake.pop();
-        particles.push({x: h.x*cellSize+cellSize/2, y: h.y*cellSize+cellSize/2, l: 1, c: `hsl(${Math.random()*360},60%,70%)`});
-    }
+  <div class="world-grid">
+    <button class="world-btn" id="worldCircle" type="button">
+      <span class="world-emoji">🌙</span>
+      <span class="world-name">Circle Moon</span>
+    </button>
+    <button class="world-btn" id="worldHex" type="button">
+      <span class="world-emoji">🐝</span>
+      <span class="world-name">Hexagon Honeycomb</span>
+    </button>
+    <button class="world-btn" id="worldPlanet" type="button">
+      <span class="world-emoji">🚀</span>
+      <span class="world-name">Planet Parade</span>
+    </button>
+    <button class="world-btn sleeping" type="button" disabled>
+      <span class="world-emoji">🔺</span>
+      <span class="world-name">Triangle Mountain</span>
+      <span class="world-soon">still sleeping…</span>
+    </button>
+    <button class="world-btn sleeping" type="button" disabled>
+      <span class="world-emoji">🦖</span>
+      <span class="world-name">Square Dino Home</span>
+      <span class="world-soon">still sleeping…</span>
+    </button>
+    <button class="world-btn sleeping" type="button" disabled>
+      <span class="world-emoji">🐚</span>
+      <span class="world-name">Spiral Shell Beach</span>
+      <span class="world-soon">still sleeping…</span>
+    </button>
+  </div>
+</section>
 
-    function col(p, a) { return a.some(i => i.x === p.x && i.y === p.y); }
+<!-- ===== LEVEL SCREEN ===== -->
+<section id="screenLevel" class="screen hidden">
+  <div class="level-head">
+    <button id="backToMap" class="round-btn" type="button" aria-label="Back to the garden">←</button>
+    <h2 id="levelTitle" class="level-title">Circle Moon</h2>
+    <button id="repeatBtn" class="round-btn" type="button" aria-label="Hear the instruction again">🔊</button>
+  </div>
 
-    function spawnF() {
-        do { food = {x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE)}; } while (col(food, snake) || col(food, obstacles));
-        food.data = Math.random() < 0.6 ? LORE_DB.find(l => l.level === level) || LORE_DB[0] : null;
-    }
+  <div id="stageDots" class="stage-dots"></div>
+  <p id="stageMsg" class="stage-msg"></p>
+  <div id="stageArea" class="stage-area"></div>
+</section>
 
-    function genObs() {
-        obstacles = []; let c = Math.max(0, (level - 1) * 2);
-        for(let i=0; i<c; i++) {
-            let o; do { o = {x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE)}; } while (col(o, snake) || Math.abs(o.x-10)+Math.abs(o.y-10) < 6);
-            obstacles.push(o);
-        }
-    }
+<!-- ===== CELEBRATION ===== -->
+<div id="celebrate" class="celebrate hidden">
+  <div class="celebrate-card">
+    <div class="celebrate-emoji" id="celebrateEmoji">💎</div>
+    <h2 id="celebrateTitle">You did it, Klausaiyan!</h2>
+    <p id="celebrateText">Ember is so proud of you!</p>
+    <button id="celebrateBtn" class="big-play" type="button">Back to the Garden 🌸</button>
+  </div>
+</div>
 
-    function draw() {
-        time += 0.02;
-        ctx.fillStyle = "#050510"; ctx.fillRect(0,0,canvas.width,canvas.height);
-        // Moon Background
-        ctx.fillStyle = "rgba(255,255,255,0.02)"; ctx.beginPath(); ctx.arc(canvas.width*0.8, canvas.height*0.2, 40, 0, Math.PI*2); ctx.fill();
-        // Stones
-        ctx.font = cellSize*0.8 + "px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        obstacles.forEach(o => {
-            ctx.shadowBlur = 10 + Math.sin(time*3)*5; ctx.shadowColor = "rgba(255,100,100,0.5)";
-            ctx.fillText("🪨", o.x*cellSize+cellSize/2, o.y*cellSize+cellSize/2);
-        });
-        // Food
-        if(food) {
-            ctx.shadowBlur = 20; ctx.shadowColor = "white";
-            ctx.fillText(food.data ? food.data.icon : "✨", food.x*cellSize+cellSize/2, food.y*cellSize+cellSize/2);
-        }
-        // Fairy
-        snake.forEach((s, i) => {
-            ctx.shadowBlur = 15; ctx.shadowColor = CHAKRA_COLORS[(level-1)%7];
-            ctx.fillStyle = i === 0 ? "white" : CHAKRA_COLORS[(level-1)%7];
-            ctx.beginPath(); ctx.arc(s.x*cellSize+cellSize/2, s.y*cellSize+cellSize/2, i===0?cellSize/2.2:cellSize/3.5, 0, Math.PI*2); ctx.fill();
-            if(i===0) { // Tiny Wings
-                ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.strokeRect(s.x*cellSize-5, s.y*cellSize+10+Math.sin(time*10)*5, cellSize+10, 2);
-            }
-        });
-        // Particles
-        particles.forEach((p, i) => {
-            p.l -= 0.015; if(p.l <= 0) { particles.splice(i, 1); return; }
-            ctx.globalAlpha = p.l; ctx.fillStyle = p.c;
-            ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
-        });
-        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
-    }
-
-    function show(d) {
-        document.getElementById('overlayIcon').innerText = d.icon;
-        document.getElementById('overlayText').innerText = d.text;
-        document.getElementById('overlayAuthor').innerText = "- " + d.author;
-        document.getElementById('btnPrimary').innerText = "Absorb Wisdom";
-        document.getElementById('btnSecondary').style.display = "none";
-        document.getElementById('overlay').style.display = "block";
-    }
-
-    function gameOver() {
-        isGameOver = true; isPaused = true;
-        document.getElementById('overlayIcon').innerText = "🌀";
-        document.getElementById('overlayText').innerText = "The rhythm continues. Rejoin the dance?";
-        document.getElementById('overlayAuthor').innerText = "";
-        document.getElementById('btnPrimary').innerText = "Reincarnate (Cycle " + level + ")";
-        document.getElementById('btnSecondary').style.display = "block";
-        document.getElementById('overlay').style.display = "block";
-    }
-
-    function handlePrimaryBtn() { if(isGameOver) reset(level); else { isPaused = false; document.getElementById('overlay').style.display = 'none'; } }
-    function handleSecondaryBtn() { reset(1); }
-    function updateUI() { 
-        const names = ["Awakening", "Flow", "Fire", "Heart", "Truth", "Vision", "Spirit"];
-        document.getElementById('levelDisplay').innerText = "Cycle " + level + ": " + (names[level-1] || "Eternal");
-        document.getElementById('scoreDisplay').innerText = "Energy: " + score; 
-    }
-    function key(e) { if(e.code === "ArrowUp" && direction.y === 0) nextDirection = {x:0, y:-1}; if(e.code === "ArrowDown" && direction.y === 0) nextDirection = {x:0, y:1}; if(e.code === "ArrowLeft" && direction.x === 0) nextDirection = {x:-1, y:0}; if(e.code === "ArrowRight" && direction.x === 0) nextDirection = {x:1, y:0}; }
-    let tsx, tsy;
-    function touchS(e) { tsx = e.touches[0].clientX; tsy = e.touches[0].clientY; }
-    function touchM(e) {
-        let dx = e.touches[0].clientX - tsx, dy = e.touches[0].clientY - tsy;
-        if(Math.abs(dx) > 15 || Math.abs(dy) > 15) {
-            if(Math.abs(dx) > Math.abs(dy)) nextDirection = dx > 0 ? {x:1, y:0} : {x:-1, y:0};
-            else nextDirection = dy > 0 ? {x:0, y:1} : {x:0, y:-1};
-            tsx = tsy = null;
-        }
-    }
-</script>
+<script src="game.js"></script>
 </body>
 </html>
-
