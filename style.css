@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Klausaiyan and the Geometry Garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <span class="top-title">✦ Klausaiyan ✦</span>
+  <div class="top-buttons">
+    <button id="muteBtn" class="round-btn" type="button" aria-label="Turn sound off or on">🔊</button>
+    <button id="resetBtn" class="round-btn" type="button" aria-label="Start the garden over">↺</button>
+  </div>
+</div>
+
+<!-- ===== TITLE SCREEN ===== -->
+<section id="screenTitle" class="screen">
+  <div class="big-moon">🌕</div>
+  <h1 class="game-title">Klausaiyan</h1>
+  <p class="game-subtitle">and the Geometry Garden</p>
+
+  <div id="nameLetters" class="name-letters" aria-label="The letters of Klausaiyan"></div>
+  <p class="tap-hint">Tap the letters!</p>
+
+  <div class="story-card">
+    <span class="ember">🐉</span>
+    <p>Ember the dragon is waiting for you, Klausaiyan!<br>
+    The garden flowers fell asleep. Only a shape hero can wake them up…</p>
+  </div>
+
+  <button id="playBtn" class="big-play" type="button">▶ &nbsp;Play!</button>
+</section>
+
+<!-- ===== GARDEN MAP ===== -->
+<section id="screenMap" class="screen hidden">
+  <h2 class="screen-heading">The Geometry Garden</h2>
+  <p class="screen-sub">Tap a glowing world!</p>
+
+  <div id="gemRow" class="gem-row" aria-label="Gems you have found"></div>
+  <div id="gardenBed" class="garden-bed" aria-label="Your growing garden"></div>
+
+  <div class="world-grid">
+    <button class="world-btn" id="worldCircle" type="button">
+      <span class="world-emoji">🌙</span>
+      <span class="world-name">Circle Moon</span>
+    </button>
+    <button class="world-btn" id="worldHex" type="button">
+      <span class="world-emoji">🐝</span>
+      <span class="world-name">Hexagon Honeycomb</span>
+    </button>
+    <button class="world-btn" id="worldPlanet" type="button">
+      <span class="world-emoji">🚀</span>
+      <span class="world-name">Planet Parade</span>
+    </button>
+    <button class="world-btn sleeping" type="button" disabled>
+      <span class="world-emoji">🔺</span>
+      <span class="world-name">Triangle Mountain</span>
+      <span class="world-soon">still sleeping…</span>
+    </button>
+    <button class="world-btn sleeping" type="button" disabled>
+      <span class="world-emoji">🦖</span>
+      <span class="world-name">Square Dino Home</span>
+      <span class="world-soon">still sleeping…</span>
+    </button>
+    <button class="world-btn sleeping" type="button" disabled>
+      <span class="world-emoji">🐚</span>
+      <span class="world-name">Spiral Shell Beach</span>
+      <span class="world-soon">still sleeping…</span>
+    </button>
+  </div>
+</section>
+
+<!-- ===== LEVEL SCREEN ===== -->
+<section id="screenLevel" class="screen hidden">
+  <div class="level-head">
+    <button id="backToMap" class="round-btn" type="button" aria-label="Back to the garden">←</button>
+    <h2 id="levelTitle" class="level-title">Circle Moon</h2>
+    <button id="repeatBtn" class="round-btn" type="button" aria-label="Hear the instruction again">🔊</button>
+  </div>
+
+  <div id="stageDots" class="stage-dots"></div>
+  <p id="stageMsg" class="stage-msg"></p>
+  <div id="stageArea" class="stage-area"></div>
+</section>
+
+<!-- ===== CELEBRATION ===== -->
+<div id="celebrate" class="celebrate hidden">
+  <div class="celebrate-card">
+    <div class="celebrate-emoji" id="celebrateEmoji">💎</div>
+    <h2 id="celebrateTitle">You did it, Klausaiyan!</h2>
+    <p id="celebrateText">Ember is so proud of you!</p>
+    <button id="celebrateBtn" class="big-play" type="button">Back to the Garden 🌸</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
