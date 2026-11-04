@@ -414,3 +414,60 @@ body::before {
   background: linear-gradient(135deg, #8ff0c8, #ffd94d); color: #38204a; border: none;
   box-shadow: 0 6px 0 #2c7a5c; font-size: 1.3em; padding: 14px 30px;
 }
+
+
+/* ===== Round 5: DJ studio + keyboard ===== */
+.pad-grid {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 14px;
+  max-width: 640px; margin: 10px auto; padding: 4px;
+}
+.dj-pad {
+  width: 104px; height: 104px; border-radius: 28px; border: 3px solid rgba(255, 255, 255, .35);
+  cursor: pointer; font-size: 2.7em; color: #2b1c58;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  box-shadow: 0 7px 0 rgba(0, 0, 0, .30), 0 14px 24px rgba(0, 0, 0, .25);
+  font-family: "Baloo 2", sans-serif;
+}
+.dj-pad small { font-size: .34em; font-weight: 800; letter-spacing: 1px; }
+.dj-pad:active { transform: translateY(4px); box-shadow: 0 3px 0 rgba(0,0,0,.3); }
+.dj-pad.flash { animation: padFlash .45s ease; }
+@keyframes padFlash {
+  0% { transform: scale(1); filter: brightness(1); }
+  40% { transform: scale(1.13); filter: brightness(1.6); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.seq-wrap { max-width: 640px; margin: 14px auto 4px; }
+.seq-row { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 8px 0; }
+.seq-label { font-size: 1.7em; width: 44px; }
+.seq-cell {
+  width: 52px; height: 52px; border-radius: 14px; cursor: pointer;
+  border: 2px solid rgba(255, 217, 77, .35); background: rgba(52, 34, 100, .85);
+  color: rgba(255, 248, 239, .55); font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 1.05em;
+}
+.seq-cell.on { background: linear-gradient(180deg, #ffe98c, #ffb84d); color: #38204a; border-color: #fff3b0; }
+.seq-cell.now { outline: 3px solid #8ff0c8; outline-offset: 2px; }
+
+.spell-word { display: flex; justify-content: center; gap: 8px; margin: 12px 0 6px; }
+.spell-letter {
+  width: 56px; height: 68px; display: grid; place-items: center; border-radius: 16px;
+  border: 2.5px dashed rgba(255, 217, 77, .5); font-size: 2em; font-weight: 800; color: rgba(255,248,239,.4);
+}
+.spell-letter.lit {
+  color: #38204a; border-style: solid; border-color: #fff3b0;
+  background: linear-gradient(180deg, #ffe98c, #ffb84d); animation: gemPop .5s ease;
+}
+.key-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 560px; margin: 10px auto; }
+.key-btn {
+  width: 72px; height: 72px; border-radius: 18px; border: none; cursor: pointer;
+  background: linear-gradient(180deg, #fdf6ec, #d9cdea); color: #2b1c58;
+  font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 1.8em;
+  box-shadow: 0 6px 0 #8d7fb8, 0 12px 20px rgba(0, 0, 0, .25);
+}
+.key-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #8d7fb8; }
+
+@media (max-width: 560px) {
+  .dj-pad { width: 88px; height: 88px; font-size: 2.3em; }
+  .seq-cell { width: 42px; height: 46px; }
+  .key-btn { width: 62px; height: 62px; }
+}
