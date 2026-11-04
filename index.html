@@ -22,6 +22,10 @@
 <!-- ===== TITLE SCREEN ===== -->
 <section id="screenTitle" class="screen">
   <div class="shooting-star" aria-hidden="true"></div>
+  <span class="float-shape" style="top:150px; left:5%;" aria-hidden="true">⬡</span>
+  <span class="float-shape" style="top:110px; right:6%; animation-delay:1.2s;" aria-hidden="true">🔺</span>
+  <span class="float-shape" style="top:330px; left:9%; animation-delay:2s;" aria-hidden="true">✦</span>
+  <span class="float-shape" style="top:360px; right:9%; animation-delay:.6s;" aria-hidden="true">●</span>
   <div class="moon-wrap" aria-hidden="true">
     <div class="mandala">
       <span class="m-shape" style="top:-14px; left:50%; margin-left:-14px;">⬡</span>
@@ -67,20 +71,22 @@
       <span class="world-emoji">🚀</span>
       <span class="world-name">Planet Parade</span>
     </button>
-    <button class="world-btn sleeping" type="button" disabled>
+    <button class="world-btn" id="worldTriangle" type="button">
       <span class="world-emoji">🔺</span>
       <span class="world-name">Triangle Mountain</span>
-      <span class="world-soon">still sleeping…</span>
     </button>
-    <button class="world-btn sleeping" type="button" disabled>
+    <button class="world-btn" id="worldSquare" type="button">
       <span class="world-emoji">🦖</span>
       <span class="world-name">Square Dino Home</span>
-      <span class="world-soon">still sleeping…</span>
     </button>
-    <button class="world-btn sleeping" type="button" disabled>
+    <button class="world-btn" id="worldSpiral" type="button">
       <span class="world-emoji">🐚</span>
       <span class="world-name">Spiral Shell Beach</span>
-      <span class="world-soon">still sleeping…</span>
+    </button>
+    <button class="world-btn" id="worldFlower" type="button">
+      <span class="world-emoji">🌸</span>
+      <span class="world-name">The Great Flower</span>
+      <span class="world-soon" id="flowerHint">Wake all 6 worlds first…</span>
     </button>
   </div>
 </section>
