@@ -14,8 +14,19 @@ const LEVELS = {
   hex: { title: "Hexagon Honeycomb", stages: 4, gem: "🍯", celebrateEmoji: "🐝",
     celebrateText: "Ember says: You KNOW the hexagon now — six sides! Bees build hexagons because they fit together with NO gaps!" },
   planet: { title: "Planet Parade", stages: 3, gem: "🪐", celebrateEmoji: "🚀",
-    celebrateText: "Ember says: What a countdown! You met ALL the planets and counted to TEN like a real space hero!" }
+    celebrateText: "Ember says: What a countdown! You met ALL the planets and counted to TEN like a real space hero!" },
+  triangle: { title: "Triangle Mountain", stages: 4, gem: "🔺", celebrateEmoji: "⛰️",
+    celebrateText: "Ember says: Triangles are the STRONGEST shape — that's why mountains and bridges wear them!" },
+  square: { title: "Square Dino Home", stages: 4, gem: "🦖", celebrateEmoji: "🦖",
+    celebrateText: "Ember says: Squares stack and build ANYTHING — houses, towers, whole cities of blocks!" },
+  spiral: { title: "Spiral Shell Beach", stages: 4, gem: "🐚", celebrateEmoji: "🌀",
+    celebrateText: "Ember says: Spirals hide in shells and sunflowers — and whole GALAXIES swirl like spirals in space!" },
+  flower: { title: "The Great Flower", stages: 1, gem: "🌸", celebrateEmoji: "🌸",
+    celebrateText: "Ember says: You grew the Flower of Life — circles holding hands! You are a true Geometry Garden hero, Klausaiyan!" }
 };
+
+const WORLD_KEYS = ["circle", "hex", "planet", "triangle", "square", "spiral"];
+function allWorldsDone() { return WORLD_KEYS.every(k => gems[k]); }
 
 function loadGems() {
   try { return JSON.parse(localStorage.getItem("klausaiyanGems")) || {}; }
@@ -56,8 +67,8 @@ function speak(text, isInstruction = false) {
   if (muted) return;
   try {
     // The screen shows "Klausaiyan", but the voice says it the way Mommy says it:
-    // "Klouse" (rhymes with house) + "Saiyan" (like Dragon Ball Z's Super Saiyan).
-    const spoken = text.replace(/Klausaiyan/g, "Klouse Saiyan");
+    // "Klouse" (rhymes with house) + "Say-yen" (the end of Saiyan, Dragon Ball Z style).
+    const spoken = text.replace(/Klausaiyan/g, "Klouse Say-yen");
     const u = new SpeechSynthesisUtterance(spoken);
     u.rate = 0.95;
     u.pitch = 1.12;
@@ -80,6 +91,12 @@ function renderMap() {
   $("worldCircle").classList.toggle("done", !!gems.circle);
   $("worldHex").classList.toggle("done", !!gems.hex);
   $("worldPlanet").classList.toggle("done", !!gems.planet);
+  $("worldTriangle").classList.toggle("done", !!gems.triangle);
+  $("worldSquare").classList.toggle("done", !!gems.square);
+  $("worldSpiral").classList.toggle("done", !!gems.spiral);
+  $("worldFlower").classList.toggle("done", !!gems.flower);
+  $("worldFlower").classList.toggle("sleeping", !allWorldsDone() && !gems.flower);
+  $("flowerHint").textContent = gems.flower ? "Bloomed! 🌸" : allWorldsDone() ? "Tap to bloom!" : "Wake all 6 worlds first…";
 }
 
 function sparkles() {
@@ -108,7 +125,8 @@ function renderStage() {
   const total = LEVELS[key].stages;
   $("stageDots").textContent = "● ".repeat(stage + 1) + "○ ".repeat(total - stage - 1);
   $("stageArea").innerHTML = "";
-  const fn = { circle: circleStage, hex: hexStage, planet: planetStage }[key];
+  const fn = { circle: circleStage, hex: hexStage, planet: planetStage,
+    triangle: triangleStage, square: squareStage, spiral: spiralStage, flower: flowerStage }[key];
   fn(stage);
 }
 
@@ -129,6 +147,15 @@ function completeLevel() {
   $("celebrateTitle").textContent = "You did it, Klausaiyan!";
   $("celebrateText").textContent = LEVELS[key].celebrateText;
   $("celebrate").classList.remove("hidden");
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement("span");
+    s.className = "sparkle";
+    s.textContent = ["✨", "⭐", "💛", "🌸"][i % 4];
+    s.style.left = (5 + Math.random() * 88) + "%";
+    s.style.top = (8 + Math.random() * 70) + "%";
+    $("celebrate").appendChild(s);
+    setTimeout(() => s.remove(), 1300);
+  }
   speak("You did it, Klausaiyan! " + LEVELS[key].celebrateText);
   current = null;
 }
@@ -565,6 +592,364 @@ function planetStage(stage) {
 
 }
 
+
+// ===== Shared mini-game helpers =====
+function tapFindStage(items, target, need, instruction, doneLine) {
+  const area = $("stageArea");
+  speak(instruction, true);
+  let found = 0;
+  const grid = document.createElement("div");
+  grid.className = "shape-grid";
+  items.forEach(([type, color]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "shape-btn";
+    b.appendChild(shapeDiv(type, color));
+    b.addEventListener("click", () => {
+      if (type === target) {
+        if (b.classList.contains("found")) return;
+        found += 1;
+        b.classList.add("found");
+        b.innerHTML = "\u2B50";
+        b.style.fontSize = "3em";
+        chime(found + 1);
+        if (found >= need) { speak(doneLine); setTimeout(nextStage, 1100); }
+        else speak(target.charAt(0).toUpperCase() + target.slice(1) + "!");
+      } else {
+        b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+        speak("That's a " + type + "!");
+      }
+    });
+    grid.appendChild(b);
+  });
+  area.appendChild(grid);
+}
+
+function countSidesStage(shapeType, verts, color, instruction, doneLine) {
+  const area = $("stageArea");
+  speak(instruction, true);
+  const wrap = document.createElement("div");
+  wrap.className = "sides-stage";
+  const big = shapeDiv(shapeType, color, 248);
+  big.style.position = "absolute";
+  big.style.left = "16px";
+  big.style.top = "16px";
+  wrap.appendChild(big);
+  let count = 0;
+  verts.forEach(([x, y]) => {
+    const d = document.createElement("button");
+    d.type = "button";
+    d.className = "corner-dot";
+    d.style.left = x + "%";
+    d.style.top = y + "%";
+    d.textContent = "\u2726";
+    d.addEventListener("click", () => {
+      if (d.classList.contains("lit")) return;
+      d.classList.add("lit");
+      count += 1;
+      d.textContent = count;
+      chime(count + 1);
+      if (count >= verts.length) { speak(doneLine); setTimeout(nextStage, 1300); }
+      else speak(NUM[count] + "!");
+    });
+    wrap.appendChild(d);
+  });
+  area.appendChild(wrap);
+}
+
+function letterStage(cards, correct, instruction, correctLine) {
+  const area = $("stageArea");
+  speak(instruction, true);
+  const wrap = document.createElement("div");
+  wrap.className = "word-cards";
+  cards.forEach(([letter, emoji]) => {
+    const c = document.createElement("button");
+    c.type = "button";
+    c.className = "word-card";
+    c.innerHTML = `<span class="wc-emoji">${emoji}</span><span class="wc-word">${letter}</span>`;
+    c.addEventListener("click", () => {
+      if (letter === correct) {
+        c.classList.add("right");
+        fanfare();
+        speak(correctLine);
+        setTimeout(nextStage, 1300);
+      } else {
+        c.classList.remove("wobble"); void c.offsetWidth; c.classList.add("wobble");
+        speak("That's the letter " + letter + ". Find " + correct + "!");
+      }
+    });
+    wrap.appendChild(c);
+  });
+  area.appendChild(wrap);
+}
+
+function wordStage(word, cards, instruction, spellLine) {
+  const area = $("stageArea");
+  speak(instruction, true);
+  const wrap = document.createElement("div");
+  wrap.className = "word-cards";
+  cards.forEach(([w, emoji]) => {
+    const c = document.createElement("button");
+    c.type = "button";
+    c.className = "word-card";
+    c.innerHTML = `<span class="wc-emoji">${emoji}</span><span class="wc-word">${w}</span>`;
+    c.addEventListener("click", () => {
+      if (w === word) {
+        c.classList.add("right");
+        fanfare();
+        speak(spellLine);
+        setTimeout(nextStage, 1300);
+      } else {
+        c.classList.remove("wobble"); void c.offsetWidth; c.classList.add("wobble");
+        speak("That word is " + w + ". Find " + word + "!");
+      }
+    });
+    wrap.appendChild(c);
+  });
+  area.appendChild(wrap);
+}
+
+// ===== TRIANGLE MOUNTAIN =====
+function triangleStage(stage) {
+  if (stage === 0) {
+    tapFindStage(
+      [["triangle", "#ff9ecb"], ["circle", "#ffd94d"], ["triangle", "#7ecbff"],
+       ["square", "#8ff0c8"], ["triangle", "#ffd94d"], ["hexagon", "#b79cff"],
+       ["triangle", "#8ff0c8"], ["square", "#ff9ecb"], ["triangle", "#b79cff"]],
+      "triangle", 5,
+      "Find all the triangles! Triangles point up like mountains!",
+      "You found five triangles! To the mountain!"
+    );
+  }
+  if (stage === 1) {
+    countSidesStage("triangle", [[50, 8], [92, 88], [8, 88]], "#ff9ecb",
+      "Count the sides of the triangle! Tap the glowing corners!",
+      "Three! A triangle has THREE sides and THREE corners!");
+  }
+  if (stage === 2) {
+    speak("Drag the triangles, and build Triangle Mountain!", true);
+    dragStage(
+      [{ x: 30, y: 52 }, { x: 50, y: 32 }, { x: 70, y: 52 }],
+      [{ x: 26, y: 84 }, { x: 52, y: 88 }, { x: 78, y: 84 }],
+      "tri-slot",
+      () => shapeDiv("triangle", "#c9a7ff", 92),
+      "You built Triangle Mountain! Triangles are SUPER strong!"
+    );
+  }
+  if (stage === 3) {
+    letterStage([["M", "\uD83C\uDF19"], ["T", "\u26F0\uFE0F"], ["B", "\uD83D\uDC1D"]], "T",
+      "Find the letter T! T says tuh \u2014 Triangle!",
+      "T! Tuh-tuh-TRIANGLE!");
+  }
+}
+
+// ===== SQUARE DINO HOME =====
+function squareStage(stage) {
+  const area = $("stageArea");
+  if (stage === 0) {
+    tapFindStage(
+      [["square", "#8ff0c8"], ["circle", "#ffd94d"], ["square", "#ffd94d"],
+       ["triangle", "#ff9ecb"], ["square", "#7ecbff"], ["hexagon", "#b79cff"],
+       ["square", "#ff9ecb"], ["circle", "#7ecbff"], ["square", "#b79cff"]],
+      "square", 5,
+      "Find all the squares! Squares are building blocks!",
+      "You found five squares! Let's build!"
+    );
+  }
+  if (stage === 1) {
+    countSidesStage("square", [[10, 10], [90, 10], [90, 90], [10, 90]], "#8ff0c8",
+      "Count the sides of the square! Tap the glowing corners!",
+      "Four! A square has FOUR sides \u2014 and they are all the same!");
+  }
+  if (stage === 2) {
+    speak("Drag the square blocks, and build a home for the baby dino!", true);
+    dragStage(
+      [{ x: 38, y: 28 }, { x: 62, y: 28 }, { x: 38, y: 54 }, { x: 62, y: 54 }],
+      [{ x: 16, y: 86 }, { x: 38, y: 88 }, { x: 62, y: 88 }, { x: 84, y: 86 }],
+      "square-slot",
+      () => shapeDiv("square", "#ffd94d", 88),
+      "The baby dino's house is built! Squares stack to build ANYTHING!"
+    );
+    setTimeout(() => {
+      const wrap = area.querySelector(".drag-area");
+      if (wrap) {
+        const s = document.createElement("span");
+        s.textContent = "\uD83E\uDD96";
+        s.style.cssText = "position:absolute;font-size:2.6em;left:47%;top:2%;";
+        wrap.appendChild(s);
+      }
+    }, 60);
+  }
+  if (stage === 3) {
+    speak("The baby dino is hungry! Feed him FOUR leaves!", true);
+    const dino = document.createElement("div");
+    dino.style.cssText = "font-size:4.2em;transition:transform .3s ease;";
+    dino.textContent = "\uD83E\uDD96";
+    area.appendChild(dino);
+    const big = document.createElement("div");
+    big.className = "big-number";
+    area.appendChild(big);
+    const grid = document.createElement("div");
+    grid.className = "shape-grid";
+    let count = 0;
+    for (let i = 0; i < 4; i++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "star-btn";
+      b.textContent = "\uD83C\uDF3F";
+      b.addEventListener("click", () => {
+        if (b.classList.contains("lit")) return;
+        b.classList.add("lit");
+        count += 1;
+        big.textContent = count;
+        dino.style.transform = `scale(${1 + count * 0.13})`;
+        chime(count + 1);
+        if (count >= 4) { speak("Four leaves! Yummy! The dino is happy and full!"); setTimeout(nextStage, 1300); }
+        else speak(NUM[count] + "!");
+      });
+      grid.appendChild(b);
+    }
+    area.appendChild(grid);
+  }
+}
+
+// ===== SPIRAL SHELL BEACH =====
+function spiralStage(stage) {
+  const area = $("stageArea");
+  if (stage === 0) {
+    speak("Find all the spirals! Spirals swirl round and round!", true);
+    const names = { "\uD83D\uDC1A": "shell", "\uD83E\uDD80": "crab", "\u2B50": "star" };
+    const items = ["\uD83C\uDF00", "\uD83D\uDC1A", "\uD83C\uDF00", "\uD83E\uDD80", "\u2B50",
+                   "\uD83C\uDF00", "\uD83D\uDC1A", "\uD83C\uDF00", "\uD83E\uDD80", "\uD83C\uDF00"];
+    let found = 0;
+    const grid = document.createElement("div");
+    grid.className = "shape-grid";
+    items.forEach(emoji => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "shape-btn";
+      b.style.fontSize = "3em";
+      b.textContent = emoji;
+      b.addEventListener("click", () => {
+        if (emoji === "\uD83C\uDF00") {
+          if (b.classList.contains("found")) return;
+          found += 1;
+          b.classList.add("found");
+          b.textContent = "\u2728";
+          chime(found + 1);
+          if (found >= 5) { speak("You found five spirals! Swirly hero!"); setTimeout(nextStage, 1100); }
+          else speak("Spiral!");
+        } else {
+          b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+          speak("That's a " + (names[emoji] || "treasure") + "!");
+        }
+      });
+      grid.appendChild(b);
+    });
+    area.appendChild(grid);
+  }
+  if (stage === 1) {
+    speak("Pattern magic! What comes next?", true);
+    const patterns = [
+      { seq: ["\u2B50", "\uD83D\uDC1A", "\u2B50", "\uD83D\uDC1A", "\u2B50"], answer: "\uD83D\uDC1A",
+        options: ["\uD83D\uDC1A", "\uD83E\uDD80", "\uD83C\uDF19"], cheer: "Yes! Star, shell, star, shell \u2014 the pattern repeats!" },
+      { seq: ["\uD83D\uDD3A", "\uD83D\uDD35", "\uD83D\uDD3A", "\uD83D\uDD35", "\uD83D\uDD3A"], answer: "\uD83D\uDD35",
+        options: ["\u2B50", "\uD83D\uDD35", "\uD83D\uDD3A"], cheer: "Yes! Triangle, circle, triangle, circle \u2014 pattern power!" }
+    ];
+    let idx = 0;
+    function renderPattern() {
+      area.innerHTML = "";
+      const pat = patterns[idx];
+      const row = document.createElement("div");
+      row.className = "shape-grid";
+      row.style.fontSize = "2.6em";
+      pat.seq.forEach(e => {
+        const s = document.createElement("span");
+        s.textContent = e;
+        row.appendChild(s);
+      });
+      const q = document.createElement("span");
+      q.textContent = "\u2753";
+      q.id = "patternQ";
+      row.appendChild(q);
+      area.appendChild(row);
+      const opts = document.createElement("div");
+      opts.className = "shape-grid";
+      pat.options.forEach(e => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "shape-btn";
+        b.style.fontSize = "2.6em";
+        b.textContent = e;
+        b.addEventListener("click", () => {
+          if (e === pat.answer) {
+            q.textContent = e;
+            fanfare();
+            idx += 1;
+            if (idx >= patterns.length) { speak(pat.cheer + " You finished ALL the patterns!"); setTimeout(nextStage, 1400); }
+            else { speak(pat.cheer + " One more pattern!"); setTimeout(renderPattern, 1300); }
+          } else {
+            b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+            speak("Look at the pattern again, hero!");
+          }
+        });
+        opts.appendChild(b);
+      });
+      area.appendChild(opts);
+    }
+    renderPattern();
+  }
+  if (stage === 2) {
+    speak("Drag the shells onto the spiral path!", true);
+    dragStage(
+      [{ x: 28, y: 28, label: "\uD83C\uDF00" }, { x: 56, y: 20, label: "\uD83C\uDF00" }, { x: 72, y: 46, label: "\uD83C\uDF00" }],
+      [{ x: 26, y: 82 }, { x: 52, y: 88 }, { x: 78, y: 80 }],
+      "circle-slot", "\uD83D\uDC1A",
+      "You followed the spiral! Spirals hide in shells, sunflowers \u2014 and even galaxies!"
+    );
+  }
+  if (stage === 3) {
+    wordStage("SHELL", [["SUN", "\u2600\uFE0F"], ["SHELL", "\uD83D\uDC1A"], ["EGG", "\uD83E\uDD5A"]],
+      "Find the word: SHELL!",
+      "Shell! S, H, E, L, L \u2014 that spells SHELL!");
+  }
+}
+
+// ===== THE GREAT FLOWER (finale) =====
+function flowerStage(stage) {
+  const area = $("stageArea");
+  speak("The Great Flower! Tap the circles, and watch them bloom!", true);
+  const wrap = document.createElement("div");
+  wrap.className = "flower-stage";
+  const spots = [[50, 50]];
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 3) * i - Math.PI / 2;
+    spots.push([50 + 26 * Math.cos(a), 50 + 26 * Math.sin(a)]);
+  }
+  let lit = 0;
+  spots.forEach(([x, y], i) => {
+    const c = document.createElement("div");
+    c.className = "flower-petal";
+    c.style.left = x + "%";
+    c.style.top = y + "%";
+    c.style.zIndex = i === 0 ? 3 : 2;
+    c.addEventListener("click", () => {
+      if (c.classList.contains("lit")) return;
+      c.classList.add("lit");
+      lit += 1;
+      chime(lit + 1);
+      if (lit >= 7) {
+        fanfare();
+        speak("Seven circles! The Flower of Life is BLOOMING!");
+        setTimeout(nextStage, 1700);
+      } else speak(NUM[lit] + "!");
+    });
+    wrap.appendChild(c);
+  });
+  area.appendChild(wrap);
+}
+
+
 // ===== Wiring =====
 "KLAUSAIYAN".split("").forEach((letter, i) => {
   const b = document.createElement("button");
@@ -584,6 +969,17 @@ $("playBtn").addEventListener("click", () => {
 $("worldCircle").addEventListener("click", () => startLevel("circle"));
 $("worldHex").addEventListener("click", () => startLevel("hex"));
 $("worldPlanet").addEventListener("click", () => startLevel("planet"));
+$("worldTriangle").addEventListener("click", () => startLevel("triangle"));
+$("worldSquare").addEventListener("click", () => startLevel("square"));
+$("worldSpiral").addEventListener("click", () => startLevel("spiral"));
+$("worldFlower").addEventListener("click", () => {
+  if (!allWorldsDone() && !gems.flower) {
+    tone(300, 0, 0.15);
+    speak("The Great Flower is still sleeping. Wake all six worlds first, hero!");
+    return;
+  }
+  startLevel("flower");
+});
 $("backToMap").addEventListener("click", () => {
   current = null;
   try { speechSynthesis.cancel(); } catch (e) {}
