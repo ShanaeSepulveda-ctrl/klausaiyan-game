@@ -10,11 +10,11 @@ let current = null;
 
 const LEVELS = {
   circle: { title: "Circle Moon", stages: 4, gem: "🌙", celebrateEmoji: "🌙",
-    celebrateText: "Ember says: You found the circles, counted the stars, and read the word MOON!" },
+    celebrateText: "Ember says: You found the circles — circles have NO corners — counted the stars, and read the word MOON!" },
   hex: { title: "Hexagon Honeycomb", stages: 4, gem: "🍯", celebrateEmoji: "🐝",
-    celebrateText: "Ember says: You KNOW the hexagon now — six sides! And the bees have their honeycomb!" },
-  planet: { title: "Planet Parade", stages: 2, gem: "🪐", celebrateEmoji: "🚀",
-    celebrateText: "Ember says: What a countdown! You visited the planets like a real space hero!" }
+    celebrateText: "Ember says: You KNOW the hexagon now — six sides! Bees build hexagons because they fit together with NO gaps!" },
+  planet: { title: "Planet Parade", stages: 3, gem: "🪐", celebrateEmoji: "🚀",
+    celebrateText: "Ember says: What a countdown! You met ALL the planets and counted to TEN like a real space hero!" }
 };
 
 function loadGems() {
@@ -55,7 +55,10 @@ function speak(text, isInstruction = false) {
   }
   if (muted) return;
   try {
-    const u = new SpeechSynthesisUtterance(text);
+    // The screen shows "Klausaiyan", but the voice says it the way Mommy says it:
+    // "Klouse" (rhymes with house) + "Saiyan" (like Dragon Ball Z's Super Saiyan).
+    const spoken = text.replace(/Klausaiyan/g, "Klouse Saiyan");
+    const u = new SpeechSynthesisUtterance(spoken);
     u.rate = 0.95;
     u.pitch = 1.12;
     speechSynthesis.cancel();
@@ -244,7 +247,7 @@ function circleStage(stage) {
           b.innerHTML = "⭐";
           b.style.fontSize = "3em";
           chime(found);
-          if (found >= 5) { speak("You found five circles! Amazing!"); setTimeout(nextStage, 1000); }
+          if (found >= 5) { speak("You found five circles! Circles have NO corners!"); setTimeout(nextStage, 1000); }
           else speak("Circle!");
         } else {
           b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
@@ -482,47 +485,84 @@ function planetStage(stage) {
   }
 
   if (stage === 1) {
-    speak("Tap each planet, and say hello!", true);
-    const planets = [
-      { name: "Earth", fact: "Earth! Our home!", emoji: "🌍", size: 96 },
-      { name: "Mars", fact: "Mars! The red planet!", color: "#ff6b57", size: 78 },
-      { name: "Jupiter", fact: "Jupiter! The biggest planet!", color: "#ffb84d", size: 122 },
-      { name: "Saturn", fact: "Saturn! It has beautiful rings!", emoji: "🪐", size: 108 }
+    speak("Tap each planet, and say hello! Planets are round like circles — spheres!", true);
+    const bodies = [
+      { name: "Sun", sun: true, emoji: "\u2600\uFE0F", size: 110, facts: ["The Sun is a STAR!", "The Sun is not a planet. It is our star!", "The Sun gives us light and warmth!"] },
+      { name: "Mercury", color: "#c9b8a3", size: 52, facts: ["Mercury! The smallest planet!", "Mercury is closest to the Sun!", "Mercury zooms around the Sun the fastest!"] },
+      { name: "Venus", color: "#ffce7a", size: 78, facts: ["Venus! The hottest planet!", "Venus is the brightest planet in our sky!", "Venus spins the other way!"] },
+      { name: "Earth", emoji: "\uD83C\uDF0D", size: 84, facts: ["Earth! Our home!", "Earth has ONE moon!", "Earth is where YOU live, hero!"] },
+      { name: "Mars", color: "#ff6b57", size: 66, facts: ["Mars! The red planet!", "Mars has the tallest volcano in space!", "Little robots drive on Mars!"] },
+      { name: "Jupiter", color: "#ffb84d", size: 124, facts: ["Jupiter! The BIGGEST planet!", "Jupiter has a giant red storm!", "Jupiter is so big, every other planet could fit inside!"] },
+      { name: "Saturn", emoji: "\uD83E\uDE90", size: 116, facts: ["Saturn! It has beautiful rings!", "Saturn's rings are made of ice and rock!", "Saturn has more moons than any other planet!"] },
+      { name: "Uranus", color: "#8ff0e4", size: 92, facts: ["Uranus! It rolls around on its side!", "Uranus is icy and teal!", "Uranus spins like a rolling ball!"] },
+      { name: "Neptune", color: "#6f8dff", size: 88, facts: ["Neptune! The windiest planet!", "Neptune is the FARTHEST planet from the Sun!", "Neptune is deep, dark blue!"] }
     ];
     let visited = 0;
+    const totalPlanets = bodies.filter(b => !b.sun).length;
     const row = document.createElement("div");
     row.className = "planet-row";
-    planets.forEach(p => {
+    bodies.forEach(p => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "planet";
+      let factIdx = 0;
       const ball = document.createElement("span");
       ball.className = "p-ball";
       ball.style.width = p.size + "px";
       ball.style.height = p.size + "px";
-      if (p.emoji) { ball.textContent = p.emoji; ball.style.fontSize = (p.size * 0.82) + "px"; }
+      if (p.emoji) { ball.textContent = p.emoji; ball.style.fontSize = (p.size * 0.8) + "px"; }
       else ball.style.background = `radial-gradient(circle at 35% 32%, #ffffff88, ${p.color} 55%)`;
       const label = document.createElement("span");
       label.textContent = p.name;
       b.appendChild(ball);
       b.appendChild(label);
       b.addEventListener("click", () => {
-        if (!b.classList.contains("visited")) {
+        const fact = p.facts[factIdx % p.facts.length];
+        factIdx += 1;
+        chime(3);
+        if (!p.sun && !b.classList.contains("visited")) {
           b.classList.add("visited");
           visited += 1;
-          chime(visited + 2);
-          if (visited >= planets.length) {
-            speak(p.fact + " You visited ALL the planets!");
-            setTimeout(nextStage, 1400);
+          if (visited >= totalPlanets) {
+            speak(fact + " You visited ALL the planets!");
+            setTimeout(nextStage, 1500);
             return;
           }
         }
-        speak(p.fact);
+        speak(fact);
       });
       row.appendChild(b);
     });
     area.appendChild(row);
   }
+
+  if (stage === 2) {
+    speak("Space counting! Tap the stars, and count all the way to TEN!", true);
+    const big = document.createElement("div");
+    big.className = "big-number";
+    area.appendChild(big);
+    const grid = document.createElement("div");
+    grid.className = "shape-grid";
+    let count = 0;
+    for (let i = 0; i < 10; i++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "star-btn";
+      b.textContent = "\u2B50";
+      b.addEventListener("click", () => {
+        if (b.classList.contains("lit")) return;
+        b.classList.add("lit");
+        count += 1;
+        big.textContent = count;
+        chime(count);
+        if (count >= 10) { speak("TEN stars! You counted all the way to TEN!"); setTimeout(nextStage, 1400); }
+        else speak(NUM[count] + "!");
+      });
+      grid.appendChild(b);
+    }
+    area.appendChild(grid);
+  }
+
 }
 
 // ===== Wiring =====
