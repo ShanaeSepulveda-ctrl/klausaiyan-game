@@ -14,6 +14,7 @@
 <div class="topbar">
   <span class="top-title">✦ Klausaiyan ✦</span>
   <div class="top-buttons">
+    <button id="homeBtn" class="round-btn" type="button" aria-label="Go back to the first page">🏠</button>
     <button id="muteBtn" class="round-btn" type="button" aria-label="Turn sound off or on">🔊</button>
     <button id="resetBtn" class="round-btn" type="button" aria-label="Start the garden over">↺</button>
   </div>
@@ -57,6 +58,7 @@
 
   <div id="gemRow" class="gem-row" aria-label="Gems you have found"></div>
   <div id="gardenBed" class="garden-bed" aria-label="Your growing garden"></div>
+  <p id="factLine" class="fact-line"></p>
 
   <div class="world-grid">
     <button class="world-btn" id="worldCircle" type="button">
@@ -83,12 +85,37 @@
       <span class="world-emoji">🐚</span>
       <span class="world-name">Spiral Shell Beach</span>
     </button>
+    <button class="world-btn" id="worldMatch" type="button">
+      <span class="world-emoji">🧩</span>
+      <span class="world-name">Match Quest</span>
+    </button>
+    <button class="world-btn" id="worldFrog" type="button">
+      <span class="world-emoji">🐸</span>
+      <span class="world-name">Frog Coding Pond</span>
+    </button>
     <button class="world-btn" id="worldFlower" type="button">
       <span class="world-emoji">🌸</span>
       <span class="world-name">The Great Flower</span>
       <span class="world-soon" id="flowerHint">Wake all 6 worlds first…</span>
     </button>
+    <button class="world-btn" id="worldDiscover" type="button">
+      <span class="world-emoji">🔭</span>
+      <span class="world-name">Explore &amp; Discover</span>
+      <span class="world-soon">Tap everything. Learn everything!</span>
+    </button>
   </div>
+</section>
+
+<!-- ===== DISCOVERY GARDEN (free explore) ===== -->
+<section id="screenDiscover" class="screen hidden">
+  <div class="level-head">
+    <button id="discoverBack" class="round-btn" type="button" aria-label="Back to the garden">←</button>
+    <h2 class="level-title">Explore &amp; Discover</h2>
+    <span style="width:54px;"></span>
+  </div>
+  <p class="stage-msg">Tap anything that looks interesting!</p>
+  <p id="discoverCount" class="fact-line"></p>
+  <div id="discoverGrid" class="discover-grid"></div>
 </section>
 
 <!-- ===== LEVEL SCREEN ===== -->
@@ -110,6 +137,7 @@
     <div class="celebrate-emoji" id="celebrateEmoji">💎</div>
     <h2 id="celebrateTitle">You did it, Klausaiyan!</h2>
     <p id="celebrateText">Ember is so proud of you!</p>
+    <p id="celebrateTell" class="celebrate-tell"></p>
     <button id="celebrateBtn" class="big-play" type="button">Back to the Garden 🌸</button>
   </div>
 </div>
