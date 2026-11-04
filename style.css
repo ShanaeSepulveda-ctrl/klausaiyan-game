@@ -315,3 +315,42 @@ body::before {
 
 .celebrate-card { box-shadow: 0 0 60px rgba(255, 217, 77, .30), 0 24px 50px rgba(0,0,0,.45); }
 .story-card { box-shadow: 0 12px 28px rgba(0,0,0,.25); }
+
+
+/* ===== Round 3: new worlds + finale ===== */
+.sides-stage { position: relative; width: 280px; height: 280px; margin: 4px auto; }
+.slot.tri-slot {
+  clip-path: polygon(50% 4%, 96% 92%, 4% 92%); border: none;
+  background: rgba(255, 158, 203, .22);
+}
+.slot.square-slot { border-radius: 16px; }
+
+.flower-stage { position: relative; width: 330px; height: 330px; margin: 4px auto; }
+.flower-petal {
+  position: absolute; width: 128px; height: 128px; margin: -64px 0 0 -64px; border-radius: 50%;
+  border: 3px dashed rgba(255, 243, 176, .75); cursor: pointer; transition: all .4s ease;
+  background: rgba(255, 248, 239, .04);
+}
+.flower-petal.lit {
+  border: 3px solid rgba(255, 255, 255, .65);
+  background: radial-gradient(circle at 50% 42%, rgba(255, 243, 176, .92), rgba(255, 158, 203, .55) 62%, rgba(183, 156, 255, .40));
+  box-shadow: 0 0 30px rgba(255, 158, 203, .45);
+  animation: gemPop .5s ease;
+}
+
+.float-shape { position: absolute; font-size: 1.6em; opacity: .65; animation: floaty 6.5s ease-in-out infinite; pointer-events: none; z-index: 0; }
+
+.world-btn:not(.sleeping) { animation: floaty 8s ease-in-out infinite; }
+.world-grid .world-btn:nth-child(2n) { animation-delay: 1.4s; }
+.world-grid .world-btn:nth-child(3n) { animation-delay: 2.6s; }
+
+.big-play { background-size: 200% auto; animation: shimmer 6s linear infinite; }
+.stage-area > * { animation: fadeIn .35s ease both; }
+.screen-heading { text-shadow: 0 0 26px rgba(255, 217, 77, .35); }
+#worldFlower:not(.sleeping) { border-color: var(--rose); box-shadow: 0 0 28px rgba(255, 158, 203, .40); }
+
+@media (max-width: 560px) {
+  .flower-stage { width: 280px; height: 280px; }
+  .flower-petal { width: 108px; height: 108px; margin: -54px 0 0 -54px; }
+  .float-shape { display: none; }
+}
