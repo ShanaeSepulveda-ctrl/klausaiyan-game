@@ -354,3 +354,63 @@ body::before {
   .flower-petal { width: 108px; height: 108px; margin: -54px 0 0 -54px; }
   .float-shape { display: none; }
 }
+
+
+/* ===== Round 4: home, matching, coding, discovery ===== */
+.fact-line { min-height: 1.3em; margin: 2px 0 0; font-weight: 700; color: var(--mint); }
+.celebrate-tell {
+  background: rgba(255, 217, 77, .14); border: 1.5px dashed rgba(255, 217, 77, .65);
+  border-radius: 18px; padding: 10px 14px; font-size: 1.02em; line-height: 1.4;
+}
+.shadow-shape { filter: drop-shadow(0 0 7px rgba(255, 243, 176, .55)); }
+.shape-btn.selected { transform: scale(1.14); filter: drop-shadow(0 0 14px rgba(255, 217, 77, .8)); }
+.group-btn {
+  min-width: 132px; min-height: 84px; padding: 10px 12px; border-radius: 22px; cursor: pointer;
+  border: 2.5px solid rgba(255, 217, 77, .5); background: rgba(52, 34, 100, .9);
+  font-size: 1.35em; line-height: 1.3; word-break: break-all;
+}
+.group-btn:active { transform: scale(.96); }
+
+.discover-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px; max-width: 720px; margin: 14px auto 0; position: relative;
+}
+.discover-btn {
+  border: 2px solid rgba(255, 217, 77, .35); border-radius: 26px; cursor: pointer; padding: 16px 8px 12px;
+  background: rgba(52, 34, 100, .8); color: var(--ink); font-family: "Baloo 2", sans-serif;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.discover-btn:active { transform: scale(.95); }
+.discover-btn .d-emoji { font-size: 3em; }
+.discover-btn .d-name { font-weight: 800; font-size: 1.1em; }
+.discover-btn.found { border-color: var(--mint); }
+.discover-btn.found .d-name::after { content: " ⭐"; }
+
+.frog-pond {
+  position: relative; height: 148px; margin: 10px auto; max-width: 96%;
+  background: linear-gradient(180deg, rgba(126, 203, 255, .30), rgba(38, 96, 180, .35));
+  border: 1.5px solid rgba(126, 203, 255, .5); border-radius: 24px; overflow: hidden;
+}
+.pond-cell { position: absolute; bottom: 10px; width: 60px; text-align: center; font-size: 1.7em; }
+.frog {
+  position: absolute; top: 22px; width: 60px; text-align: center; font-size: 2.7em;
+  transition: left .5s ease; z-index: 3;
+}
+.frog.spin { animation: spinOnce .55s ease; }
+@keyframes spinOnce { to { transform: rotate(360deg); } }
+.code-row {
+  min-height: 54px; font-size: 1.8em; letter-spacing: 3px; margin: 6px auto;
+  max-width: 640px; padding: 8px; border-radius: 18px;
+  background: rgba(13, 8, 32, .55); border: 1.5px dashed rgba(143, 240, 200, .5);
+}
+.cmd-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px; }
+.cmd-btn {
+  padding: 14px 20px; border-radius: 999px; border: 2px solid rgba(255, 217, 77, .5); cursor: pointer;
+  background: rgba(52, 34, 100, .9); color: var(--ink);
+  font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 1.15em;
+}
+.cmd-btn:active { transform: scale(.94); }
+.cmd-btn.cmd-go {
+  background: linear-gradient(135deg, #8ff0c8, #ffd94d); color: #38204a; border: none;
+  box-shadow: 0 6px 0 #2c7a5c; font-size: 1.3em; padding: 14px 30px;
+}
