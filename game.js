@@ -13,7 +13,7 @@ const LEVELS = {
     celebrateText: "Ember says: You found the circles — circles have NO corners — counted the stars, and read the word MOON!" },
   hex: { title: "Hexagon Honeycomb", stages: 4, gem: "🍯", celebrateEmoji: "🐝",
     celebrateText: "Ember says: You KNOW the hexagon now — six sides! Bees build hexagons because they fit together with NO gaps!" },
-  planet: { title: "Planet Parade", stages: 3, gem: "🪐", celebrateEmoji: "🚀",
+  planet: { title: "Planet Parade", stages: 4, gem: "🪐", celebrateEmoji: "🚀",
     celebrateText: "Ember says: What a countdown! You met ALL the planets and counted to TEN like a real space hero!" },
   triangle: { title: "Triangle Mountain", stages: 4, gem: "🔺", celebrateEmoji: "⛰️",
     celebrateText: "Ember says: Triangles are the STRONGEST shape — that's why mountains and bridges wear them!" },
@@ -23,10 +23,14 @@ const LEVELS = {
     celebrateText: "Ember says: Spirals hide in shells and sunflowers — and whole GALAXIES swirl like spirals in space!" },
   flower: { title: "The Great Flower", stages: 1, gem: "🌸", celebrateEmoji: "🌸",
     celebrateText: "Ember says: You grew the Flower of Life — circles holding hands! You are a true Geometry Garden hero, Klausaiyan!" },
-  match: { title: "Match Quest", stages: 3, gem: "🧩", celebrateEmoji: "🧩",
+  match: { title: "Match Quest", stages: 4, gem: "🧩", celebrateEmoji: "🧩",
     celebrateText: "Ember says: Shadow matcher, number matcher, word matcher — you matched them ALL!" },
-  frog: { title: "Frog Coding Pond", stages: 2, gem: "🐸", celebrateEmoji: "🐸",
-    celebrateText: "Ember says: You are a CODER now! You told the frog exactly what to do — and it worked!" }
+  frog: { title: "Frog Coding Pond", stages: 3, gem: "🐸", celebrateEmoji: "🐸",
+    celebrateText: "Ember says: You are a CODER now! You told the frog exactly what to do — and it worked!" },
+  dj: { title: "DJ Quest", stages: 3, gem: "🎧", celebrateEmoji: "🎧",
+    celebrateText: "Ember says: DJ Klausaiyan in the house! You copied beats, finished melodies, and made your OWN music!" },
+  keys: { title: "Keyboard Hero", stages: 2, gem: "⌨️", celebrateEmoji: "⌨️",
+    celebrateText: "Ember says: You typed your name on a keyboard like a real computer hero!" }
 };
 
 // Show-and-tell missions: something to go teach/show another human after each world.
@@ -39,7 +43,9 @@ const TELLS = {
   spiral: "🌟 Show & Tell Mission: find a spiral — a shell, a snail, a swirl — and show someone!",
   flower: "🌟 Show & Tell Mission: draw a flower made of circles for someone you love!",
   match: "🌟 Show & Tell Mission: match a pair of socks and tell someone HOW you knew they match!",
-  frog: "🌟 Show & Tell Mission: give someone three instructions — hop, spin, hop — and watch them follow YOUR code!"
+  frog: "🌟 Show & Tell Mission: give someone three instructions — hop, spin, hop — and watch them follow YOUR code!",
+  dj: "🌟 Show & Tell Mission: perform your beat for someone — and count 1, 2, 3, 4 out loud while it plays!",
+  keys: "🌟 Show & Tell Mission: type or write your name and read out every letter as you go!"
 };
 
 const WORLD_KEYS = ["circle", "hex", "planet", "triangle", "square", "spiral"];
@@ -85,7 +91,10 @@ function speak(text, isInstruction = false) {
   try {
     // The screen shows "Klausaiyan", but the voice says it the way Mommy says it:
     // "Klouse" (rhymes with house) + "Say-yen" (the end of Saiyan, Dragon Ball Z style).
-    const spoken = text.replace(/Klausaiyan/g, "Klouse Say-yen");
+    const spoken = text
+      .replace(/Klausaiyan/g, "Klouse Say-yen")
+      .replace(/\bdinos\b/gi, "dye-nose")
+      .replace(/\bdino\b/gi, "dye-no");
     const u = new SpeechSynthesisUtterance(spoken);
     u.rate = 0.95;
     u.pitch = 1.12;
@@ -96,6 +105,7 @@ function speak(text, isInstruction = false) {
 
 // ===== Screens =====
 function show(id) {
+  stopSeq();
   ["screenTitle", "screenMap", "screenLevel", "screenDiscover"].forEach(s => $(s).classList.toggle("hidden", s !== id));
 }
 
@@ -116,6 +126,8 @@ function renderMap() {
   $("flowerHint").textContent = gems.flower ? "Bloomed! 🌸" : allWorldsDone() ? "Tap to bloom!" : "Wake all 6 worlds first…";
   $("worldMatch").classList.toggle("done", !!gems.match);
   $("worldFrog").classList.toggle("done", !!gems.frog);
+  $("worldDJ").classList.toggle("done", !!gems.dj);
+  $("worldKeys").classList.toggle("done", !!gems.keys);
   $("factLine").textContent = discoveredFacts.size > 0
     ? `⭐ Facts discovered: ${discoveredFacts.size} of ${DISCOVER.length} — keep exploring!`
     : "";
@@ -143,13 +155,14 @@ function startLevel(key) {
 }
 
 function renderStage() {
+  stopSeq();
   const { key, stage } = current;
   const total = LEVELS[key].stages;
   $("stageDots").textContent = "● ".repeat(stage + 1) + "○ ".repeat(total - stage - 1);
   $("stageArea").innerHTML = "";
   const fn = { circle: circleStage, hex: hexStage, planet: planetStage,
     triangle: triangleStage, square: squareStage, spiral: spiralStage, flower: flowerStage,
-    match: matchStage, frog: frogStage }[key];
+    match: matchStage, frog: frogStage, dj: djStage, keys: keysStage }[key];
   fn(stage);
 }
 
@@ -614,8 +627,51 @@ function planetStage(stage) {
     area.appendChild(grid);
   }
 
-}
 
+  if (stage === 3) {
+    speak("Tap the planets from BIGGEST to SMALLEST!", true);
+    const order = ["Jupiter", "Saturn", "Earth", "Mars"];
+    const display = [
+      { name: "Earth", emoji: "\uD83C\uDF0D", size: 84 },
+      { name: "Jupiter", color: "#ffb84d", size: 124 },
+      { name: "Mars", color: "#ff6b57", size: 66 },
+      { name: "Saturn", emoji: "\uD83E\uDE90", size: 112 }
+    ];
+    let next = 0;
+    const row = document.createElement("div");
+    row.className = "planet-row";
+    display.forEach(pl => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "planet";
+      const ball = document.createElement("span");
+      ball.className = "p-ball";
+      ball.style.width = pl.size + "px";
+      ball.style.height = pl.size + "px";
+      if (pl.emoji) { ball.textContent = pl.emoji; ball.style.fontSize = (pl.size * 0.8) + "px"; }
+      else ball.style.background = `radial-gradient(circle at 35% 32%, #ffffff88, ${pl.color} 55%)`;
+      const label = document.createElement("span");
+      label.textContent = pl.name;
+      b.appendChild(ball);
+      b.appendChild(label);
+      b.addEventListener("click", () => {
+        if (b.classList.contains("visited")) return;
+        if (pl.name === order[next]) {
+          b.classList.add("visited");
+          next += 1;
+          chime(next + 2);
+          if (next >= order.length) { speak("You sorted the planets by size! Jupiter is the GIANT!"); setTimeout(nextStage, 1400); }
+          else speak(pl.name + "! Next!");
+        } else {
+          b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+          speak("Find the BIGGEST one left!");
+        }
+      });
+      row.appendChild(b);
+    });
+    area.appendChild(row);
+  }
+}
 
 // ===== Shared mini-game helpers =====
 function tapFindStage(items, target, need, instruction, doneLine) {
@@ -1183,6 +1239,48 @@ function matchStage(stage) {
     }
     renderTarget();
   }
+
+  if (stage === 3) {
+    const targets = [
+      { type: "triangle", color: "#ff9ecb", word: "TRIANGLE" },
+      { type: "square", color: "#8ff0c8", word: "SQUARE" },
+      { type: "circle", color: "#7ecbff", word: "CIRCLE" }
+    ];
+    const words = ["TRIANGLE", "SQUARE", "CIRCLE", "HEXAGON"];
+    let r = 0;
+    function renderShapeWord() {
+      area.innerHTML = "";
+      const t = targets[r];
+      speak("What is this shape's name? Tap the right word!", true);
+      const bigWrap = document.createElement("div");
+      bigWrap.style.cssText = "display:grid;place-items:center;padding:8px 0;";
+      bigWrap.appendChild(shapeDiv(t.type, t.color, 118));
+      area.appendChild(bigWrap);
+      const wrap = document.createElement("div");
+      wrap.className = "word-cards";
+      words.forEach(w => {
+        const c = document.createElement("button");
+        c.type = "button";
+        c.className = "word-card";
+        c.innerHTML = `<span class="wc-word">${w}</span>`;
+        c.addEventListener("click", () => {
+          if (w === t.word) {
+            c.classList.add("right");
+            fanfare();
+            r += 1;
+            if (r >= targets.length) { speak("You can READ the shape names! Geometry reader!"); setTimeout(nextStage, 1400); }
+            else { speak("Yes! That says " + w + "!"); setTimeout(renderShapeWord, 1200); }
+          } else {
+            c.classList.remove("wobble"); void c.offsetWidth; c.classList.add("wobble");
+            speak("That word is " + w + ". Sound out the shape's name!");
+          }
+        });
+        wrap.appendChild(c);
+      });
+      area.appendChild(wrap);
+    }
+    renderShapeWord();
+  }
 }
 
 // ===== FROG CODING POND =====
@@ -1191,8 +1289,11 @@ function frogStage(stage) {
   const cfg = stage === 0
     ? { cells: 5, target: 4, big: false,
         intro: "You are the CODER! Tap HOP to write code for the frog. Then press GO!" }
-    : { cells: 7, target: 6, big: true,
-        intro: "A bigger pond! Use HOP and BIG JUMP to code the frog to the fly!" };
+    : stage === 1
+    ? { cells: 7, target: 6, big: true,
+        intro: "A bigger pond! Use HOP and BIG JUMP to code the frog to the fly!" }
+    : { cells: 9, target: 8, big: true,
+        intro: "The LONG pond! Plan your code like a real coder, then press GO!" };
   speak(cfg.intro, true);
 
   const STEP = 66;
@@ -1289,6 +1390,351 @@ function frogStage(stage) {
 }
 
 
+
+// ===== Drum & beat audio =====
+let noiseBuffer = null;
+let seqTimer = null;
+function stopSeq() { if (seqTimer) { clearInterval(seqTimer); seqTimer = null; } }
+function audioReady() {
+  audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function drumKick() {
+  if (muted) return;
+  try {
+    const ctx = audioReady();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(160, t);
+    osc.frequency.exponentialRampToValueAtTime(45, t + 0.22);
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.3);
+  } catch (e) {}
+}
+function noiseHit(freq, type, dur, vol, when = 0) {
+  if (muted) return;
+  try {
+    const ctx = audioReady();
+    if (!noiseBuffer) {
+      noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    }
+    const t = ctx.currentTime + when;
+    const srcN = ctx.createBufferSource();
+    srcN.buffer = noiseBuffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = type;
+    filter.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    srcN.connect(filter).connect(g).connect(ctx.destination);
+    srcN.start(t); srcN.stop(t + dur + 0.05);
+  } catch (e) {}
+}
+function drumSnare() { noiseHit(1800, "bandpass", 0.14, 0.28); }
+function drumHat() { noiseHit(7500, "highpass", 0.05, 0.14); }
+function drumClap() { noiseHit(1100, "bandpass", 0.09, 0.25); noiseHit(1100, "bandpass", 0.12, 0.22, 0.05); }
+
+// ===== KEYBOARD HERO =====
+function keysStage(stage) {
+  const area = $("stageArea");
+  const cfg = stage === 0
+    ? { word: "KLAUS", keys: ["K", "M", "L", "B", "A", "T", "U", "S"],
+        intro: "Keyboard Hero! Type your name! Tap the keys: K, L, A, U, S!" }
+    : { word: "MOON", keys: ["M", "A", "O", "S", "N", "E"],
+        intro: "Type the word MOON, computer hero!" };
+  speak(cfg.intro, true);
+
+  const wordRow = document.createElement("div");
+  wordRow.className = "spell-word";
+  const letterSpans = cfg.word.split("").map(ch => {
+    const s = document.createElement("span");
+    s.className = "spell-letter";
+    s.textContent = ch;
+    wordRow.appendChild(s);
+    return s;
+  });
+  area.appendChild(wordRow);
+
+  const keyRow = document.createElement("div");
+  keyRow.className = "key-row";
+  let expected = 0;
+  cfg.keys.forEach(letter => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "key-btn";
+    b.textContent = letter;
+    b.addEventListener("click", () => {
+      if (expected >= cfg.word.length) return;
+      if (letter === cfg.word[expected]) {
+        letterSpans[expected].classList.add("lit");
+        expected += 1;
+        chime(expected + 2);
+        if (expected >= cfg.word.length) {
+          fanfare();
+          speak("You typed " + cfg.word + "! Computer hero!");
+          setTimeout(nextStage, 1500);
+        } else speak("Letter " + letter + "! Next: " + cfg.word[expected] + "!");
+      } else {
+        b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+        speak("That's " + letter + ". Find " + cfg.word[expected] + "!");
+      }
+    });
+    keyRow.appendChild(b);
+  });
+  area.appendChild(keyRow);
+}
+
+// ===== DJ QUEST =====
+function djStage(stage) {
+  const area = $("stageArea");
+
+  if (stage === 0) {
+    speak("Copy the Beat! Press the speaker to hear my beat. Then tap the same pads!", true);
+    const pads = [
+      { e: "\u2B50", note: 0, color: "#ffd94d" },
+      { e: "\uD83C\uDF19", note: 2, color: "#7ecbff" },
+      { e: "\uD83C\uDF6F", note: 4, color: "#ffb84d" },
+      { e: "\uD83D\uDE80", note: 6, color: "#ff9ecb" }
+    ];
+    const rounds = [[0, 1, 2], [2, 1, 3, 0], [0, 2, 3, 2, 1]];
+    let round = 0, input = [], playing = false;
+
+    const grid = document.createElement("div");
+    grid.className = "pad-grid";
+    const padEls = pads.map((pd, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "dj-pad";
+      b.style.background = `radial-gradient(circle at 35% 30%, #ffffff66, ${pd.color})`;
+      b.textContent = pd.e;
+      b.addEventListener("click", () => {
+        if (playing) return;
+        flashPad(b);
+        tone(SCALE[pd.note], 0, 0.4);
+        if (input.length >= rounds[round].length) return;
+        input.push(i);
+        const want = rounds[round];
+        if (input[input.length - 1] !== want[input.length - 1]) {
+          input = [];
+          speak("Oops! Listen again, DJ!");
+          setTimeout(playSeq, 900);
+          return;
+        }
+        if (input.length === want.length) {
+          input = [];
+          round += 1;
+          fanfare();
+          if (round >= rounds.length) { speak("You copied ALL the beats! DJ ears!"); setTimeout(nextStage, 1500); }
+          else { speak("Beat copied! Here comes a longer one!"); setTimeout(playSeq, 1300); }
+        }
+      });
+      grid.appendChild(b);
+      return b;
+    });
+    area.appendChild(grid);
+
+    const hear = document.createElement("button");
+    hear.type = "button";
+    hear.className = "cmd-btn cmd-go";
+    hear.textContent = "\uD83D\uDD0A Hear the Beat";
+    hear.addEventListener("click", playSeq);
+    area.appendChild(hear);
+
+    function flashPad(el) {
+      el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+    }
+    function playSeq() {
+      if (playing) return;
+      playing = true;
+      input = [];
+      const want = rounds[round];
+      want.forEach((padIdx, i) => {
+        setTimeout(() => {
+          flashPad(padEls[padIdx]);
+          tone(SCALE[pads[padIdx].note], 0, 0.4);
+          if (i === want.length - 1) setTimeout(() => { playing = false; }, 350);
+        }, 420 * (i + 1));
+      });
+    }
+    setTimeout(playSeq, 700);
+  }
+
+  if (stage === 1) {
+    speak("Finish the melody! What note comes next?", true);
+    const pats = [
+      { seq: ["\uD83C\uDFB5", "\uD83C\uDFB6", "\uD83C\uDFB5", "\uD83C\uDFB6", "\uD83C\uDFB5"], answer: "\uD83C\uDFB6",
+        options: ["\uD83C\uDFB6", "\uD83E\uDD41", "\uD83D\uDD14"], notes: [0, 2, 0, 2, 0], answerNote: 2 },
+      { seq: ["\uD83E\uDD41", "\uD83E\uDD41", "\uD83D\uDD14", "\uD83E\uDD41", "\uD83E\uDD41"], answer: "\uD83D\uDD14",
+        options: ["\u2B50", "\uD83D\uDD14", "\uD83C\uDFB5"], notes: [4, 4, 6, 4, 4], answerNote: 6 }
+    ];
+    let idx = 0;
+    function renderPat() {
+      area.innerHTML = "";
+      const pat = pats[idx];
+      const row = document.createElement("div");
+      row.className = "shape-grid";
+      row.style.fontSize = "2.4em";
+      pat.seq.forEach(e => {
+        const s = document.createElement("span");
+        s.textContent = e;
+        row.appendChild(s);
+      });
+      const q = document.createElement("span");
+      q.textContent = "\u2753";
+      row.appendChild(q);
+      area.appendChild(row);
+      pat.notes.forEach((n, i) => setTimeout(() => tone(SCALE[n], 0, 0.3), 260 * i));
+      const opts = document.createElement("div");
+      opts.className = "shape-grid";
+      pat.options.forEach(e => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "shape-btn";
+        b.style.fontSize = "2.4em";
+        b.textContent = e;
+        b.addEventListener("click", () => {
+          if (e === pat.answer) {
+            q.textContent = e;
+            tone(SCALE[pat.answerNote], 0, 0.45);
+            fanfare();
+            idx += 1;
+            if (idx >= pats.length) { speak("You finished ALL the melodies!"); setTimeout(nextStage, 1500); }
+            else { speak("Yes! The melody repeats! One more!"); setTimeout(renderPat, 1400); }
+          } else {
+            b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+            speak("Sing the pattern in your head, DJ!");
+          }
+        });
+        opts.appendChild(b);
+      });
+      area.appendChild(opts);
+    }
+    renderPat();
+  }
+
+  if (stage === 2) {
+    speak("DJ Studio! Tap the pads. Build a beat on the beat machine. You are the DJ!", true);
+    const named = new Set();
+    function nameOnce(name, fact) { if (!named.has(name)) { named.add(name); speak(fact); } }
+
+    const padsWrap = document.createElement("div");
+    padsWrap.className = "pad-grid";
+    const drumPads = [
+      { label: "Kick", e: "\uD83E\uDD41", color: "#ff6b57", fn: drumKick, fact: "Kick drum! It goes BOOM, like a heartbeat!" },
+      { label: "Snare", e: "\u26AA", color: "#e8e4da", fn: drumSnare, fact: "Snare drum! It goes SNAP!" },
+      { label: "Hat", e: "\uD83D\uDFE1", color: "#ffd94d", fn: drumHat, fact: "Hi-hat! It goes tiss, tiss, tiss!" },
+      { label: "Clap", e: "\uD83D\uDC4F", color: "#ff9ecb", fn: drumClap, fact: "Clap! Clap along, DJ!" }
+    ];
+    drumPads.forEach(pd => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "dj-pad labeled";
+      b.style.background = `radial-gradient(circle at 35% 30%, #ffffff66, ${pd.color})`;
+      b.innerHTML = `<span>${pd.e}</span><small>${pd.label}</small>`;
+      b.addEventListener("click", () => {
+        b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash");
+        pd.fn();
+        nameOnce(pd.label, pd.fact);
+      });
+      padsWrap.appendChild(b);
+    });
+    const noteNames = ["C", "D", "E", "G", "A"];
+    const noteColors = ["#ff9ecb", "#ffb84d", "#ffd94d", "#8ff0c8", "#7ecbff"];
+    noteNames.forEach((nm, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "dj-pad labeled";
+      b.style.background = `radial-gradient(circle at 35% 30%, #ffffff66, ${noteColors[i]})`;
+      b.innerHTML = `<span>\uD83C\uDFB5</span><small>${nm}</small>`;
+      b.addEventListener("click", () => {
+        b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash");
+        tone(SCALE[i], 0, 0.45);
+        nameOnce("note" + nm, "Note " + nm + "!");
+      });
+      padsWrap.appendChild(b);
+    });
+    area.appendChild(padsWrap);
+
+    const seqWrap = document.createElement("div");
+    seqWrap.className = "seq-wrap";
+    const seqState = { drum: Array(8).fill(false), bell: Array(8).fill(false) };
+    const cellEls = { drum: [], bell: [] };
+    [["drum", "\uD83E\uDD41"], ["bell", "\uD83D\uDD14"]].forEach(([rowName, icon]) => {
+      const rowEl = document.createElement("div");
+      rowEl.className = "seq-row";
+      const lab = document.createElement("span");
+      lab.className = "seq-label";
+      lab.textContent = icon;
+      rowEl.appendChild(lab);
+      for (let i = 0; i < 8; i++) {
+        const c = document.createElement("button");
+        c.type = "button";
+        c.className = "seq-cell";
+        c.textContent = i + 1;
+        c.addEventListener("click", () => {
+          seqState[rowName][i] = !seqState[rowName][i];
+          c.classList.toggle("on", seqState[rowName][i]);
+          if (seqState[rowName][i]) { if (rowName === "drum") drumKick(); else tone(SCALE[6], 0, 0.3); }
+        });
+        cellEls[rowName].push(c);
+        rowEl.appendChild(c);
+      }
+      seqWrap.appendChild(rowEl);
+    });
+    area.appendChild(seqWrap);
+
+    const controls = document.createElement("div");
+    controls.className = "cmd-row";
+    const playBtn = document.createElement("button");
+    playBtn.type = "button";
+    playBtn.className = "cmd-btn cmd-go";
+    playBtn.textContent = "\u25B6\uFE0F Play My Beat";
+    let step = 0;
+    playBtn.addEventListener("click", () => {
+      if (seqTimer) {
+        stopSeq();
+        playBtn.textContent = "\u25B6\uFE0F Play My Beat";
+        document.querySelectorAll(".seq-cell.now").forEach(x => x.classList.remove("now"));
+        return;
+      }
+      speak("Counting the beat: one, two, three, four!");
+      playBtn.textContent = "\u23F9 Stop";
+      seqTimer = setInterval(() => {
+        document.querySelectorAll(".seq-cell.now").forEach(x => x.classList.remove("now"));
+        cellEls.drum[step].classList.add("now");
+        cellEls.bell[step].classList.add("now");
+        if (seqState.drum[step]) drumKick();
+        if (seqState.bell[step]) tone(SCALE[6], 0, 0.3);
+        if (step % 2 === 0) drumHat();
+        step = (step + 1) % 8;
+      }, 270);
+    });
+    controls.appendChild(playBtn);
+
+    const doneBtn = document.createElement("button");
+    doneBtn.type = "button";
+    doneBtn.className = "cmd-btn";
+    doneBtn.textContent = "\uD83C\uDF89 My Song is Done!";
+    doneBtn.addEventListener("click", () => {
+      stopSeq();
+      fanfare();
+      speak("DJ Klausaiyan, everybody! What a song!");
+      setTimeout(nextStage, 1300);
+    });
+    controls.appendChild(doneBtn);
+    area.appendChild(controls);
+  }
+}
+
+
 // ===== Wiring =====
 "KLAUSAIYAN".split("").forEach((letter, i) => {
   const b = document.createElement("button");
@@ -1313,6 +1759,8 @@ $("worldSquare").addEventListener("click", () => startLevel("square"));
 $("worldSpiral").addEventListener("click", () => startLevel("spiral"));
 $("worldMatch").addEventListener("click", () => startLevel("match"));
 $("worldFrog").addEventListener("click", () => startLevel("frog"));
+$("worldDJ").addEventListener("click", () => startLevel("dj"));
+$("worldKeys").addEventListener("click", () => startLevel("keys"));
 $("worldDiscover").addEventListener("click", () => openDiscover());
 $("discoverBack").addEventListener("click", () => { renderMap(); show("screenMap"); });
 $("homeBtn").addEventListener("click", () => {
