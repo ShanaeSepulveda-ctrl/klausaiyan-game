@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 
@@ -163,6 +163,16 @@
       <span class="world-name">Ember's Story Tales</span>
       <span class="world-soon">Stories YOU help tell!</span>
     </button>
+    <button class="world-btn" id="worldSacred" type="button">
+      <span class="world-emoji">🌼</span>
+      <span class="world-name">Sacred Geometry Studio</span>
+      <span class="world-soon">Seed of Life, Fibonacci, secret flowers!</span>
+    </button>
+    <button class="world-btn" id="worldPlay" type="button">
+      <span class="world-emoji">🎈</span>
+      <span class="world-name">Ember's Playtime</span>
+      <span class="world-soon">Keepy uppy, freeze dance, picnic sharing!</span>
+    </button>
     <button class="world-btn" id="worldDiscover" type="button">
       <span class="world-emoji">🔭</span>
       <span class="world-name">Explore &amp; Discover</span>
@@ -208,6 +218,13 @@
   </div>
 </div>
 
-<script src="game.js?v=10"></script>
+<script src="game.js?v=11"></script>
+<script>
+  // Offline play: once the game has loaded once, the tablet can open and
+  // play it with no internet at all — no wandering the web required.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+</script>
 </body>
 </html>
