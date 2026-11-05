@@ -219,24 +219,48 @@ function pickPrettyVoice() {
       "Karen", "Moira", "Tessa",     // Apple English variants
       "Google English"
     ];
-    for (const fav of favorites) {
-      const v = voices.find(v => v.name && v.name.includes(fav));
-      if (v) { prettyVoice = v; return; }
-    }
-    // Otherwise: prefer a US English voice, then any English voice.
-    prettyVoice =
-      voices.find(v => /^en[-_]US/i.test(v.lang || "")) ||
-      voices.find(v => /^en/i.test(v.lang || "")) ||
-      prettyVoice;
+    // OFFLINE FIRST (Round 15): some voices live on the device (localService)
+    // and some stream from the internet. A network voice goes SILENT when
+    // the tablet plays offline — the chimes (generated on-device) still
+    // sing, but the voice vanishes. That was the tablet's missing voice.
+    // So: hunt the favorites among on-device voices first, and only accept
+    // a network voice when the device has no local voice at all.
+    const hunt = list => {
+      for (const fav of favorites) {
+        const v = list.find(v => v.name && v.name.includes(fav));
+        if (v) return v;
+      }
+      return list.find(v => /^en[-_]US/i.test(v.lang || "")) ||
+             list.find(v => /^en/i.test(v.lang || "")) || null;
+    };
+    const locals = voices.filter(v => v.localService);
+    prettyVoice = (locals.length && hunt(locals)) || hunt(voices) || prettyVoice;
+    updateVoiceNote();
+  } catch (e) {}
+}
+
+// If the device truly has no speech voices in this browser (the Amazon Kids
+// browser is the usual case), say so on the title screen instead of leaving
+// everyone wondering where Ember's voice went.
+function updateVoiceNote() {
+  try {
+    const note = $("voiceNote");
+    if (!note) return;
+    const has = window.speechSynthesis && speechSynthesis.getVoices().length > 0;
+    note.hidden = !!has;
   } catch (e) {}
 }
 try {
   pickPrettyVoice();
   if (window.speechSynthesis) speechSynthesis.onvoiceschanged = pickPrettyVoice;
+  setTimeout(updateVoiceNote, 2500); // voices load slowly on some tablets — check again
 } catch (e) {}
 
 let speakGen = 0;
+let voiceFellBack = false;
+let lastSpeak = null;
 function speak(text, isInstruction = false) {
+  lastSpeak = { text, isInstruction };
   if (isInstruction) {
     lastInstruction = text;
     $("stageMsg").textContent = text;
@@ -280,7 +304,19 @@ function speak(text, isInstruction = false) {
       // gentle lift so they sound friendly rather than flat.
       u.pitch = prettyVoice && /google/i.test(prettyVoice.name) ? 1.02 : 1.1;
       u.onend = () => { idx += 1; nextPart(); };
-      u.onerror = () => { idx += 1; nextPart(); };
+      u.onerror = () => {
+        // If the hand-picked voice itself is broken on this device, drop it
+        // and retry the whole line in the tablet's plain default voice —
+        // a plain voice beats a silent pretty one.
+        if (prettyVoice && !voiceFellBack) {
+          voiceFellBack = true;
+          prettyVoice = null;
+          const again = lastSpeak;
+          if (again) setTimeout(() => speak(again.text, again.isInstruction), 80);
+          return;
+        }
+        idx += 1; nextPart();
+      };
       try { speechSynthesis.speak(u); } catch (e) {}
     };
     setTimeout(nextPart, 60);
