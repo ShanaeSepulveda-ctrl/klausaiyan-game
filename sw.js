@@ -1,6 +1,6 @@
 // Geometry Garden service worker — offline play for the kids' tablet.
 // Bump the CACHE name every round so a new deploy replaces the old game.
-const CACHE = "geometry-garden-v12";
+const CACHE = "geometry-garden-v13";
 const FILES = ["./", "./index.html", "./style.css", "./game.js"];
 
 self.addEventListener("install", event => {
