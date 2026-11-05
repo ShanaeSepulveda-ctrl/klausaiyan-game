@@ -532,3 +532,23 @@ body::before {
 
 .beat-dot { transition: all .2s ease; }
 .beat-dot.revealed { transform: scale(1.18); }
+
+
+/* ===== Round 9: princess letters, love notes, mindfulness ===== */
+.name-letter.lit {
+  background: linear-gradient(180deg, #fff3b0, #ffd94d) !important;
+  box-shadow: 0 0 22px rgba(255, 217, 77, .85), 0 5px 0 #b97e14 !important;
+  transform: scale(1.1);
+}
+.celebrate-love {
+  font-size: 1.22em; font-weight: 800; color: #ffd94d; line-height: 1.4;
+  text-shadow: 0 0 18px rgba(255, 217, 77, .35);
+}
+.breath-circle {
+  width: 160px; height: 160px; border-radius: 50%; margin: 26px auto 8px;
+  display: grid; place-items: center; font-size: 3.4em;
+  background: radial-gradient(circle at 42% 38%, rgba(255, 243, 176, .95), rgba(143, 240, 200, .75) 55%, rgba(126, 203, 255, .55));
+  box-shadow: 0 0 44px rgba(143, 240, 200, .5), inset 0 0 30px rgba(255, 255, 255, .35);
+  transition: transform 4s ease-in-out;
+}
+.wish-btn.found { border-color: var(--mint); box-shadow: 0 0 22px rgba(143, 240, 200, .55); }
