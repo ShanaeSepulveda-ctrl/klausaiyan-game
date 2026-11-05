@@ -27,7 +27,7 @@ const LEVELS = {
     celebrateText: "Ember says: Shadow matcher, number matcher, word matcher — you matched them ALL!" },
   frog: { title: "Frog Coding Pond", stages: 4, gem: "🐸", celebrateEmoji: "🐸",
     celebrateText: "Ember says: You are a CODER now! You told the frog exactly what to do — and it worked!" },
-  dj: { title: "DJ Quest", stages: 5, gem: "🎧", celebrateEmoji: "🎧",
+  dj: { title: "DJ Quest", stages: 6, gem: "🎧", celebrateEmoji: "🎧",
     celebrateText: "Ember says: DJ Klausaiyan in the house! You copied beats, finished melodies, and made your OWN music!" },
   keys: { title: "Keyboard Hero", stages: 3, gem: "⌨️", celebrateEmoji: "⌨️",
     celebrateText: "Ember says: You typed your name on a keyboard like a real computer hero!" },
@@ -151,16 +151,26 @@ function saveBeatsList(list) {
   try { localStorage.setItem(beatKey(), JSON.stringify(list.slice(0, 12))); } catch (e) {}
 }
 function encodeBeat(seq, tempoIdx, melody) {
-  const bits = rowName => seq[rowName].map(on => (on ? "1" : "0")).join("");
-  const hex = rowName => parseInt(bits(rowName), 2).toString(16).toUpperCase().padStart(2, "0");
-  return "KG1-" + hex("kick") + hex("snare") + hex("bell") + "-" + tempoIdx + "-" + (melody.join("") || "0");
+  const bits = rowName => (seq[rowName] || []).map(on => (on ? "1" : "0")).join("");
+  const hex = rowName => parseInt(bits(rowName) || "0", 2).toString(16).toUpperCase().padStart(2, "0");
+  return "KG2-" + hex("kick") + hex("snare") + hex("bell") + hex("star") + "-" + tempoIdx + "-" + (melody.join("") || "0");
 }
 function decodeBeat(code) {
-  const m = String(code || "").trim().toUpperCase().match(/^KG1-([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})-([0-2])-([0-7]{1,12})$/);
-  if (!m) return null;
+  const text = String(code || "").trim().toUpperCase();
   const row = h => parseInt(h, 16).toString(2).padStart(8, "0").split("").map(c => c === "1");
+  const empty = () => Array(8).fill(false);
+  // KG2 codes carry a fourth row (the star row). Old KG1 codes still load —
+  // their star row simply starts empty.
+  let m = text.match(/^KG2-([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})-([0-2])-([0-7]{1,12})$/);
+  if (m) return {
+    seq: { kick: row(m[1]), snare: row(m[2]), bell: row(m[3]), star: row(m[4]) },
+    tempoIdx: parseInt(m[5], 10),
+    melody: m[6] === "0" ? [] : m[6].split("").map(Number)
+  };
+  m = text.match(/^KG1-([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})-([0-2])-([0-7]{1,12})$/);
+  if (!m) return null;
   return {
-    seq: { kick: row(m[1]), snare: row(m[2]), bell: row(m[3]) },
+    seq: { kick: row(m[1]), snare: row(m[2]), bell: row(m[3]), star: empty() },
     tempoIdx: parseInt(m[4], 10),
     melody: m[5] === "0" ? [] : m[5].split("").map(Number)
   };
@@ -1303,7 +1313,13 @@ const DISCOVER = [
   { e: "🏞️", n: "River", facts: ["Rivers always flow downhill, all the way to the sea!", "The Grand Canyon was carved by a river, one tiny bit of rock at a time, over millions of years!", "Rivers are highways and homes for fish, frogs, ducks, and otters!"] },
   { e: "🏝️", n: "Ocean", facts: ["The oceans hold almost ALL the water on Earth!", "The Moon pulls the ocean up and down \u2014 that's what makes the tides!", "Most of the ocean has never been explored \u2014 it is deeper than the tallest mountain is high!"] },
   { e: "⛰️", n: "Mountain", facts: ["Some mountains are still GROWING \u2014 a tiny bit taller every year!", "Mount Everest is the tallest mountain on Earth!", "Mountains make their own weather \u2014 that's why their tops wear snow hats!"] },
-  { e: "☁️", n: "Cloud", facts: ["A cloud is made of millions of tiny water drops, floating!", "Fog is a cloud that has come down to visit the ground!", "A big fluffy cloud can weigh as much as a hundred elephants \u2014 and still float!"] }
+  { e: "☁️", n: "Cloud", facts: ["A cloud is made of millions of tiny water drops, floating!", "Fog is a cloud that has come down to visit the ground!", "A big fluffy cloud can weigh as much as a hundred elephants \u2014 and still float!"] },
+  { e: "🔊", n: "Sound", facts: ["Sound is AIR SHAKING! When something wiggles the air, your ears hear it!", "Sound waves surf through the air to your ears \u2014 like invisible ripples in a pond!", "Big shakes make LOUD sounds, and tiny shakes make quiet ones!"] },
+  { e: "🗣️", n: "Echo", facts: ["An echo is your sound BOUNCING back to you off a wall or a mountain!", "Bats use echoes to 'see' in the dark \u2014 they listen to their own squeaks bounce!", "Shout into a canyon and the canyon shouts back \u2014 that's an echo!"] },
+  { e: "🥁", n: "Drum", facts: ["A drum sings when its stretched top wiggles after you tap it!", "Drums are one of the OLDEST instruments humans ever made!", "Your heart is a drum inside you \u2014 feel it go boom, boom, boom!"] },
+  { e: "🎹", n: "Piano", facts: ["A piano has 88 keys \u2014 count them someday!", "Inside a piano, tiny hammers tap strings to make the notes!", "The piano was invented about 300 years ago in Italy!"] },
+  { e: "🎸", n: "Guitar", facts: ["Guitar strings WIGGLE to make sound \u2014 thin strings sing high, thick strings sing low!", "The big hole in a guitar helps the sound jump out!", "Strumming means brushing all the strings at once!"] },
+  { e: "🔔", n: "Bell", facts: ["A bell sings because the metal itself wiggles when it's struck!", "Some church bells weigh as much as several elephants!", "Tiny bells jingle high, and giant bells boom deep and low!"] }
 ];
 
 function loadFacts() {
@@ -1726,9 +1742,13 @@ function drumClap() { noiseHit(1100, "bandpass", 0.09, 0.25); noiseHit(1100, "ba
 // ===== KEYBOARD HERO =====
 function keysStage(stage) {
   const area = $("stageArea");
+  const myName = playerId === "klaus" ? "KLAUSAIYAN" : "SOPHIA";
   const cfg = stage === 0
-    ? { word: "KLAUS", keys: ["K", "M", "L", "B", "A", "T", "U", "S"],
-        intro: "Keyboard Hero! Type your name! Tap the keys: K, L, A, U, S!" }
+    ? { word: myName,
+        keys: playerId === "klaus" ? ["K", "L", "A", "U", "S", "I", "Y", "N", "M", "O", "T"] : ["S", "O", "P", "H", "I", "A", "M", "T"],
+        intro: playerId === "klaus"
+          ? "Keyboard Hero! Type your WHOLE name — all ten letters! K, L, A, U, S, A, I, Y, A, N — Klausaiyan!"
+          : "Keyboard Princess! Type YOUR name, princess! S, O, P, H, I, A — Sophia!" }
     : stage === 1
     ? { word: "MOON", keys: ["M", "A", "O", "S", "N", "E"],
         intro: "Type the word MOON, computer hero!" }
@@ -2147,9 +2167,9 @@ function djStage(stage) {
 
     const seqWrap = document.createElement("div");
     seqWrap.className = "seq-wrap";
-    const rows = [["kick", "🥁"], ["snare", "⚪"], ["bell", "🔔"]];
-    const seqState = { kick: Array(8).fill(false), snare: Array(8).fill(false), bell: Array(8).fill(false) };
-    const cellEls = { kick: [], snare: [], bell: [] };
+    const rows = [["kick", "🥁"], ["snare", "⚪"], ["bell", "🔔"], ["star", "✨"]];
+    const seqState = { kick: Array(8).fill(false), snare: Array(8).fill(false), bell: Array(8).fill(false), star: Array(8).fill(false) };
+    const cellEls = { kick: [], snare: [], bell: [], star: [] };
     rows.forEach(([rowName, icon]) => {
       const rowEl = document.createElement("div");
       rowEl.className = "seq-row";
@@ -2168,7 +2188,8 @@ function djStage(stage) {
           if (seqState[rowName][i]) {
             if (rowName === "kick") drumKick();
             else if (rowName === "snare") drumSnare();
-            else tone(SCALE[6], 0, 0.3);
+            else if (rowName === "bell") tone(SCALE[6], 0, 0.3);
+            else { tone(SCALE[7], 0, 0.18); tone(SCALE[7] * 1.5, 0.05, 0.14); }
           }
         });
         cellEls[rowName].push(c);
@@ -2177,6 +2198,36 @@ function djStage(stage) {
       seqWrap.appendChild(rowEl);
     });
     area.appendChild(seqWrap);
+
+    // Ember's preset beats — one tap loads a real groove to play with.
+    const PRESETS = [
+      { name: "🚀 Rocket Beat", say: "Rocket Beat loaded! A driving beat that wants to blast off — press Play, then make it YOURS!", seq: {
+        kick: [1,0,0,0,1,0,0,0], snare: [0,0,1,0,0,0,1,0], bell: [1,0,1,0,1,0,1,0], star: [0,1,0,1,0,1,0,1] } },
+      { name: "🌊 Ocean Beat", say: "Ocean Beat! Slow and calm, like waves on the shore. Beautiful for a quiet song!", seq: {
+        kick: [1,0,0,0,0,0,0,0], snare: [0,0,0,0,1,0,0,0], bell: [1,0,0,1,0,0,1,0], star: [0,0,1,0,0,1,0,0] } },
+      { name: "🐝 Honey Beat", say: "Honey Beat! Bouncy like a bee dancing from flower to flower!", seq: {
+        kick: [1,0,1,0,1,0,0,0], snare: [0,0,1,0,0,1,0,0], bell: [0,1,0,1,0,1,0,1], star: [1,1,0,1,1,0,1,0] } }
+    ];
+    const presetRow = document.createElement("div");
+    presetRow.className = "cmd-row";
+    PRESETS.forEach(p => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "cmd-btn";
+      b.textContent = p.name;
+      b.addEventListener("click", () => {
+        ["kick", "snare", "bell", "star"].forEach(rowName => {
+          for (let i = 0; i < 8; i++) {
+            seqState[rowName][i] = !!p.seq[rowName][i];
+            cellEls[rowName][i].classList.toggle("on", seqState[rowName][i]);
+          }
+        });
+        fanfare();
+        speak(p.say);
+      });
+      presetRow.appendChild(b);
+    });
+    area.appendChild(presetRow);
 
     let tempo = 260;
     const controls = document.createElement("div");
@@ -2227,6 +2278,7 @@ function djStage(stage) {
         if (seqState.kick[step]) drumKick();
         if (seqState.snare[step]) drumSnare();
         if (seqState.bell[step]) tone(SCALE[6], 0, 0.3);
+        if (seqState.star[step]) { tone(SCALE[7], 0, 0.18); tone(SCALE[7] * 1.5, 0.05, 0.14); }
         if (step % 2 === 0) drumHat();
         step = (step + 1) % 8;
       }, tempo);
@@ -2272,9 +2324,9 @@ function djStage(stage) {
     libWrap.appendChild(codeOut);
 
     function applyBeat(beat) {
-      ["kick", "snare", "bell"].forEach(rowName => {
+      ["kick", "snare", "bell", "star"].forEach(rowName => {
         for (let i = 0; i < 8; i++) {
-          seqState[rowName][i] = !!beat.seq[rowName][i];
+          seqState[rowName][i] = !!(beat.seq[rowName] && beat.seq[rowName][i]);
           cellEls[rowName][i].classList.toggle("on", seqState[rowName][i]);
         }
       });
@@ -2332,12 +2384,12 @@ function djStage(stage) {
     saveBeatBtn.className = "cmd-btn cmd-go";
     saveBeatBtn.textContent = "💾 Save My Beat";
     saveBeatBtn.addEventListener("click", () => {
-      const anyOn = ["kick", "snare", "bell"].some(rn => seqState[rn].some(Boolean));
+      const anyOn = ["kick", "snare", "bell", "star"].some(rn => seqState[rn].some(Boolean));
       if (!anyOn && !melody.length) { speak("Make a beat first, DJ! Tap the number squares!"); return; }
       const beats = loadBeats();
       const beat = {
         name: player().short + "'s Beat " + (beats.length + 1),
-        seq: { kick: seqState.kick.slice(), snare: seqState.snare.slice(), bell: seqState.bell.slice() },
+        seq: { kick: seqState.kick.slice(), snare: seqState.snare.slice(), bell: seqState.bell.slice(), star: seqState.star.slice() },
         tempoIdx, melody: melody.slice()
       };
       beats.unshift(beat);
@@ -2361,7 +2413,7 @@ function djStage(stage) {
     loadRow.className = "cmd-row";
     const codeInput = document.createElement("input");
     codeInput.type = "text";
-    codeInput.placeholder = "Type a beat code… KG1-…";
+    codeInput.placeholder = "Type a beat code… KG2-… (old KG1 codes work too!)";
     codeInput.style.cssText = "font-size:1.05em;padding:14px;border-radius:14px;border:2px solid #c9b98a;min-width:230px;text-transform:uppercase;";
     const loadCodeBtn = document.createElement("button");
     loadCodeBtn.type = "button";
@@ -2379,6 +2431,91 @@ function djStage(stage) {
     libWrap.appendChild(loadRow);
     area.appendChild(libWrap);
     renderLibrary();
+  }
+
+  if (stage === 5) { // Beat Copycat — Ember plays a pattern, DJ rebuilds it
+    const patterns = [
+      { kick: [1,0,0,0,1,0,0,0], snare: [0,0,1,0,0,0,1,0] },
+      { kick: [1,0,1,0,0,0,1,0], snare: [0,0,0,1,0,1,0,0] }
+    ];
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= patterns.length) return;
+      const target = patterns[r];
+      speak("Beat Copycat! Listen to Ember's secret beat — really listen! — then build the SAME beat on your squares and press Check My Beat!", true);
+      const mine = { kick: Array(8).fill(false), snare: Array(8).fill(false) };
+      const cells = { kick: [], snare: [] };
+      const wrap = document.createElement("div");
+      wrap.className = "seq-wrap";
+      [["kick", "🥁"], ["snare", "⚪"]].forEach(([rowName, icon]) => {
+        const rowEl = document.createElement("div");
+        rowEl.className = "seq-row";
+        const lab = document.createElement("span");
+        lab.className = "seq-label";
+        lab.textContent = icon;
+        rowEl.appendChild(lab);
+        for (let i = 0; i < 8; i++) {
+          const c = document.createElement("button");
+          c.type = "button";
+          c.className = "seq-cell";
+          c.textContent = i + 1;
+          c.addEventListener("click", () => {
+            mine[rowName][i] = !mine[rowName][i];
+            c.classList.toggle("on", mine[rowName][i]);
+            if (mine[rowName][i]) { if (rowName === "kick") drumKick(); else drumSnare(); }
+          });
+          cells[rowName].push(c);
+          rowEl.appendChild(c);
+        }
+        wrap.appendChild(rowEl);
+      });
+      area.appendChild(wrap);
+      const row = document.createElement("div");
+      row.className = "cmd-row";
+      const listenBtn = document.createElement("button");
+      listenBtn.type = "button";
+      listenBtn.className = "cmd-btn cmd-go";
+      listenBtn.textContent = "🔊 Play Ember's Beat";
+      let playing = false;
+      listenBtn.addEventListener("click", () => {
+        if (playing) return;
+        playing = true;
+        speak("Listen with your whole ears…");
+        let stepIdx = 0;
+        const iv = setInterval(() => {
+          if (!wrap.isConnected || stepIdx >= 16) { clearInterval(iv); playing = false; return; }
+          const s = stepIdx % 8;
+          document.querySelectorAll(".seq-cell.now").forEach(x => x.classList.remove("now"));
+          cells.kick[s].classList.add("now");
+          cells.snare[s].classList.add("now");
+          if (target.kick[s]) drumKick();
+          if (target.snare[s]) drumSnare();
+          stepIdx += 1;
+          if (stepIdx >= 16) { clearInterval(iv); playing = false; setTimeout(() => document.querySelectorAll(".seq-cell.now").forEach(x => x.classList.remove("now")), 320); }
+        }, 330);
+      });
+      row.appendChild(listenBtn);
+      const checkBtn = document.createElement("button");
+      checkBtn.type = "button";
+      checkBtn.className = "cmd-btn";
+      checkBtn.textContent = "✅ Check My Beat";
+      checkBtn.addEventListener("click", () => {
+        const kickOK = mine.kick.every((v, i) => v === !!target.kick[i]);
+        const snareOK = mine.snare.every((v, i) => v === !!target.snare[i]);
+        if (kickOK && snareOK) {
+          fanfare();
+          r += 1;
+          if (r >= patterns.length) { speak("PERFECT COPY — both beats! You have DJ ears, superstar! Your ears remember music!"); setTimeout(nextStage, 2000); }
+          else { speak("PERFECT COPY! Your ears remembered every sound! One more secret beat…"); setTimeout(render, 1700); }
+        } else if (!kickOK && !snareOK) speak("So close! Both rows need another listen — play Ember's beat again and watch the numbers light up!");
+        else if (!kickOK) speak("The ⚪ row matches! Listen to the 🥁 BOOM row once more — count where the big booms land!");
+        else speak("The 🥁 row matches! Listen to the ⚪ SNAP row once more — where do the snaps land?");
+      });
+      row.appendChild(checkBtn);
+      area.appendChild(row);
+    }
+    render();
   }
 }
 
