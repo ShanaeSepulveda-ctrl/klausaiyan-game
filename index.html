@@ -7,12 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
 <div class="topbar">
-  <span class="top-title">✦ Klausaiyan ✦</span>
+  <span class="top-title" id="topTitle">✦ Klausaiyan ✦</span>
   <div class="top-buttons">
     <button id="homeBtn" class="round-btn" type="button" aria-label="Go back to the first page">🏠</button>
     <button id="muteBtn" class="round-btn" type="button" aria-label="Turn sound off or on">🔊</button>
@@ -148,6 +148,11 @@
       <span class="world-name">Star Scientist</span>
       <span class="world-soon">Planet order, moon phases, black holes!</span>
     </button>
+    <button class="world-btn" id="worldElements" type="button">
+      <span class="world-emoji">🧪</span>
+      <span class="world-name">Element Lab</span>
+      <span class="world-soon">Periodic table, elements of life, build water!</span>
+    </button>
     <button class="world-btn" id="worldZen" type="button">
       <span class="world-emoji">🪷</span>
       <span class="world-name">Mindfulness Journey</span>
@@ -218,7 +223,7 @@
   </div>
 </div>
 
-<script src="game.js?v=11"></script>
+<script src="game.js?v=12"></script>
 <script>
   // Offline play: once the game has loaded once, the tablet can open and
   // play it with no internet at all — no wandering the web required.
