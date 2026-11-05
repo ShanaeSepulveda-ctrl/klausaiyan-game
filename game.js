@@ -39,27 +39,28 @@ const LEVELS = {
     celebrateText: "Ember says: Colors, counting horses, and finding shapes — what a bright meadow explorer!" },
   geo: { title: "Geometry Lab", stages: 4, gem: "🔷", celebrateEmoji: "🔷",
     celebrateText: "Ember says: Sides, symmetry, 3D shapes, AND perimeter — you think like a real geometry scientist now!" },
-  rocket: { title: "Rocket Math Lab", stages: 5, gem: "🛸", celebrateEmoji: "🛸",
-    celebrateText: "Ember says: Multiplication, division, fractions, place value, AND money — Rocket Math Lab conquered!" },
+  rocket: { title: "Rocket Math Lab", stages: 6, gem: "🛸", celebrateEmoji: "🛸",
+    celebrateText: "Ember says: Multiplication, division, fractions, place value, money, AND number patterns — Rocket Math Lab conquered!" },
   wizard: { title: "Word Wizard Academy", stages: 4, gem: "🧙", celebrateEmoji: "🧙",
     celebrateText: "Ember says: Rhymes, building whole sentences, main ideas, and big vocabulary words — Word Wizard, level up!" },
-  stars: { title: "Star Scientist", stages: 4, gem: "🌌", celebrateEmoji: "🔭",
-    celebrateText: "Ember says: Planet order, moon phases, light-years, nebulas, and black holes — you are a true Star Scientist!" },
-  zen: { title: "Mindfulness Journey", stages: 4, gem: "🪷", celebrateEmoji: "🪷",
-    celebrateText: "Ember says: You breathed like a dragon, named your feelings, chose kindness, and sent wishes of love to the whole world!" },
+  stars: { title: "Star Scientist", stages: 5, gem: "🌌", celebrateEmoji: "🔭",
+    celebrateText: "Ember says: Planet order, moon phases, light-years, black holes, astronauts, and Mars rovers — you are a true Star Scientist!" },
+  zen: { title: "Mindfulness Journey", stages: 6, gem: "🪷", celebrateEmoji: "🪷",
+    celebrateText: "Ember says: You breathed like a dragon, named your feelings, chose kindness, sent wishes of love, grew gratitude, and rested your whole body, star by star!" },
   animals: { title: "Animal Kingdom", stages: 4, gem: "🦁", celebrateEmoji: "🦁",
     celebrateText: "Ember says: Habitats, animal families, riddles, and baby animal names — you are a true friend of animals!" },
   tales: { title: "Ember's Story Tales", stages: 2, gem: "📖", celebrateEmoji: "📖",
     celebrateText: "Ember says: Two whole stories, lived by YOU! Stories teach our hearts to be brave, patient, and kind!" }
 };
 
-// Love notes: every celebration ends by reminding them they are loved.
+// Love notes: every celebration ends by reminding them they are loved —
+// and the children know these words are from Mom and Dad.
 const LOVE_NOTES = [
-  "And remember: you are loved exactly as you are — always. 💛",
-  "You are loved bigger than the whole sky. 🌌",
-  "Nothing could ever make you more loved. You already are, completely. 💛",
-  "You are loved on your best days AND your hard days. Always. 🌈",
-  "Ember loves you, your family loves you, and this garden loves you. 💛"
+  "And remember what Mom and Dad always tell you: you are loved exactly as you are — always. 💛",
+  "Mom and Dad love you bigger than the whole sky. 🌌",
+  "From Mom and Dad: nothing could ever make you more loved. You already are, completely. 💛",
+  "On your best days AND your hard days, Mom and Dad love you. Always. 🌈",
+  "Ember loves you, and Mom and Dad love you most of all — forever and ever. 💛"
 ];
 
 // Show-and-tell missions: something to go teach/show another human after each world.
@@ -94,13 +95,26 @@ function allWorldsDone() { return WORLD_KEYS.every(k => gems[k]); }
 // Same site, same game — progress is stored per player, so neither child
 // ever overwrites the other's gems or discoveries.
 const PLAYERS = {
-  klaus: { id: "klaus", short: "Klaus", hero: "Klausaiyan", emoji: "🦖" },
-  sophia: { id: "sophia", short: "Sophia", hero: "Princess Sophia", emoji: "👑" }
+  klaus: { id: "klaus", short: "Klaus", hero: "Klausaiyan", role: "hero", emoji: "🦖" },
+  sophia: { id: "sophia", short: "Sophia", hero: "Princess Sophia", role: "princess", emoji: "👑" }
 };
 let playerId = "klaus";
 try { playerId = localStorage.getItem("klausaiyanPlayer") || "klaus"; } catch (e) {}
 if (!PLAYERS[playerId]) playerId = "klaus";
 function player() { return PLAYERS[playerId]; }
+function roleWord() { return player().role; }
+// Personalize shared text for whoever is playing: content written with
+// "hero" (or Klausaiyan) reads correctly for Princess Sophia too — she is
+// a princess, never "the hero," and Klaus is never called Sophia.
+function pz(text) {
+  if (!text || playerId !== "sophia") return text;
+  return text
+    .replace(/Klausaiyan/g, "Princess Sophia")
+    .replace(/\bheroes\b/g, "princesses")
+    .replace(/\bHeroes\b/g, "Princesses")
+    .replace(/\bhero\b/g, "princess")
+    .replace(/\bHero\b/g, "Princess");
+}
 function gemKey() { return "klausaiyanGems_" + playerId; }
 function factKey() { return "klausaiyanFacts_" + playerId; }
 
@@ -116,6 +130,32 @@ function saveGems() {
   try { localStorage.setItem(gemKey(), JSON.stringify(gems)); } catch (e) {}
 }
 let gems = loadGems();
+
+// ===== DJ beat library: saved beats live per player, and every beat can be
+// turned into a short code the kids can give to Mom and Dad — they type the
+// code into their own game and the exact beat plays back. No server needed.
+function beatKey() { return "klausaiyanBeats_" + playerId; }
+function loadBeats() {
+  try { return JSON.parse(localStorage.getItem(beatKey())) || []; } catch (e) { return []; }
+}
+function saveBeatsList(list) {
+  try { localStorage.setItem(beatKey(), JSON.stringify(list.slice(0, 12))); } catch (e) {}
+}
+function encodeBeat(seq, tempoIdx, melody) {
+  const bits = rowName => seq[rowName].map(on => (on ? "1" : "0")).join("");
+  const hex = rowName => parseInt(bits(rowName), 2).toString(16).toUpperCase().padStart(2, "0");
+  return "KG1-" + hex("kick") + hex("snare") + hex("bell") + "-" + tempoIdx + "-" + (melody.join("") || "0");
+}
+function decodeBeat(code) {
+  const m = String(code || "").trim().toUpperCase().match(/^KG1-([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})-([0-2])-([0-7]{1,12})$/);
+  if (!m) return null;
+  const row = h => parseInt(h, 16).toString(2).padStart(8, "0").split("").map(c => c === "1");
+  return {
+    seq: { kick: row(m[1]), snare: row(m[2]), bell: row(m[3]) },
+    tempoIdx: parseInt(m[4], 10),
+    melody: m[5] === "0" ? [] : m[5].split("").map(Number)
+  };
+}
 
 // ===== Sound: chimes + guiding voice =====
 function tone(freq, delay = 0, dur = 0.35) {
@@ -149,7 +189,10 @@ function pickPrettyVoice() {
     const voices = speechSynthesis.getVoices();
     if (!voices || !voices.length) return;
     const favorites = [
-      "Google US English",           // Chrome / Android — smooth and natural
+      "Google UK English Female",    // warm British storyteller — the Mary Poppins end of the shelf
+      "Microsoft Sonia",             // Edge en-GB neural — warm and clear
+      "Serena",                      // Apple en-GB female
+      "Google US English",           // Chrome / Android — bright and clear, Miss Rachel style
       "Microsoft Aria",              // Edge neural voices
       "Microsoft Jenny",
       "Microsoft Zira",
@@ -182,7 +225,8 @@ function speak(text, isInstruction = false) {
   try {
     // The screen shows "Klausaiyan", but the voice says it the way Mommy says it:
     // "Klouse" (rhymes with house) + "Say-yen" (the end of Saiyan, Dragon Ball Z style).
-    const spoken = text
+    // pz() runs first so Princess Sophia hears "princess," never "hero."
+    const spoken = pz(text)
       .replace(/Klausaiyan/g, "Klouse Say-yen")
       .replace(/\bdinos\b/gi, "dye-nose")
       .replace(/\bdino\b/gi, "dye-no");
@@ -194,10 +238,12 @@ function speak(text, isInstruction = false) {
     chunks.map(s => s.trim()).filter(Boolean).forEach(part => {
       const u = new SpeechSynthesisUtterance(part);
       if (prettyVoice) u.voice = prettyVoice;
-      u.rate = 0.94;   // a touch slower — warm and easy to follow
+      // Miss Rachel pace: unhurried and crisply enunciated, with a warm lift —
+      // "practically perfect" storyteller energy, as far as the device allows.
+      u.rate = 0.92;
       // Google voices sound best near their natural pitch; others get a
       // gentle lift so they sound friendly rather than flat.
-      u.pitch = prettyVoice && /google/i.test(prettyVoice.name) ? 1.0 : 1.06;
+      u.pitch = prettyVoice && /google/i.test(prettyVoice.name) ? 1.02 : 1.1;
       speechSynthesis.speak(u);
     });
   } catch (e) {}
@@ -308,7 +354,7 @@ function completeLevel() {
   fanfare();
   $("celebrateEmoji").textContent = LEVELS[key].celebrateEmoji;
   $("celebrateTitle").textContent = "You did it, " + player().hero + "!";
-  $("celebrateText").textContent = LEVELS[key].celebrateText;
+  $("celebrateText").textContent = pz(LEVELS[key].celebrateText);
   const love = LOVE_NOTES[Object.keys(gems).length % LOVE_NOTES.length];
   const loveEl = $("celebrateLove");
   if (loveEl) loveEl.textContent = love;
@@ -2145,6 +2191,129 @@ function djStage(stage) {
     });
     controls.appendChild(doneBtn);
     area.appendChild(controls);
+
+    // ===== Beat Library: save beats, share them with a code, load codes =====
+    const libWrap = document.createElement("div");
+    libWrap.className = "beat-lib";
+    const libTitle = document.createElement("p");
+    libTitle.className = "visual-note";
+    libTitle.textContent = "🎧 My Beat Library — save your beats and share them with Mom and Dad!";
+    libWrap.appendChild(libTitle);
+    const libList = document.createElement("div");
+    libWrap.appendChild(libList);
+    const codeOut = document.createElement("div");
+    codeOut.className = "code-row";
+    codeOut.textContent = "Your beat code will appear here 📤";
+    libWrap.appendChild(codeOut);
+
+    function applyBeat(beat) {
+      ["kick", "snare", "bell"].forEach(rowName => {
+        for (let i = 0; i < 8; i++) {
+          seqState[rowName][i] = !!beat.seq[rowName][i];
+          cellEls[rowName][i].classList.toggle("on", seqState[rowName][i]);
+        }
+      });
+      tempoIdx = beat.tempoIdx;
+      tempo = tempos[tempoIdx][0];
+      tempoBtn.textContent = tempos[tempoIdx][1];
+      melody.length = 0;
+      beat.melody.forEach(n => melody.push(n));
+      melodyRow.textContent = melody.length
+        ? "🎵 Your melody: " + melody.map(m => noteNames[m]).join(" · ")
+        : "🎵 Your melody: tap notes to record!";
+    }
+    function shareBeat(beatObj, name) {
+      const code = encodeBeat(beatObj.seq, beatObj.tempoIdx, beatObj.melody);
+      codeOut.textContent = "📤 " + name + " — beat code: " + code;
+      const text = "🎧 " + player().short + " made a beat in the Geometry Garden DJ Studio! Open the game, go to DJ Studio PRO, and type this code into Load a Beat Code: " + code;
+      try {
+        if (navigator.share) { navigator.share({ title: "A beat by " + player().short, text }).catch(() => {}); return; }
+      } catch (e) {}
+      try { if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {}); } catch (e) {}
+      speak("Here is your beat code! Show it to Mom or Dad — they can type it into their game and hear YOUR beat!");
+    }
+    function renderLibrary() {
+      libList.innerHTML = "";
+      const beats = loadBeats();
+      if (!beats.length) {
+        const p = document.createElement("p");
+        p.className = "fact-line";
+        p.textContent = "No saved beats yet — make one and tap Save My Beat! 💾";
+        libList.appendChild(p);
+        return;
+      }
+      beats.forEach(beat => {
+        const rowEl = document.createElement("div");
+        rowEl.className = "cmd-row";
+        const load = document.createElement("button");
+        load.type = "button";
+        load.className = "cmd-btn";
+        load.textContent = "▶️ " + beat.name;
+        load.addEventListener("click", () => { applyBeat(beat); fanfare(); speak(beat.name + " is loaded! Press Play My Beat!"); });
+        const share = document.createElement("button");
+        share.type = "button";
+        share.className = "cmd-btn";
+        share.textContent = "📤 Share";
+        share.addEventListener("click", () => shareBeat(beat, beat.name));
+        rowEl.appendChild(load);
+        rowEl.appendChild(share);
+        libList.appendChild(rowEl);
+      });
+    }
+    const libControls = document.createElement("div");
+    libControls.className = "cmd-row";
+    const saveBeatBtn = document.createElement("button");
+    saveBeatBtn.type = "button";
+    saveBeatBtn.className = "cmd-btn cmd-go";
+    saveBeatBtn.textContent = "💾 Save My Beat";
+    saveBeatBtn.addEventListener("click", () => {
+      const anyOn = ["kick", "snare", "bell"].some(rn => seqState[rn].some(Boolean));
+      if (!anyOn && !melody.length) { speak("Make a beat first, DJ! Tap the number squares!"); return; }
+      const beats = loadBeats();
+      const beat = {
+        name: player().short + "'s Beat " + (beats.length + 1),
+        seq: { kick: seqState.kick.slice(), snare: seqState.snare.slice(), bell: seqState.bell.slice() },
+        tempoIdx, melody: melody.slice()
+      };
+      beats.unshift(beat);
+      saveBeatsList(beats);
+      renderLibrary();
+      fanfare();
+      speak("Saved! " + beat.name + " is in your Beat Library — and you can share it with Mom and Dad!");
+    });
+    const shareCurBtn = document.createElement("button");
+    shareCurBtn.type = "button";
+    shareCurBtn.className = "cmd-btn";
+    shareCurBtn.textContent = "📤 Share This Beat";
+    shareCurBtn.addEventListener("click", () => {
+      shareBeat({ seq: seqState, tempoIdx, melody }, player().short + "'s new beat");
+    });
+    libControls.appendChild(saveBeatBtn);
+    libControls.appendChild(shareCurBtn);
+    libWrap.appendChild(libControls);
+
+    const loadRow = document.createElement("div");
+    loadRow.className = "cmd-row";
+    const codeInput = document.createElement("input");
+    codeInput.type = "text";
+    codeInput.placeholder = "Type a beat code… KG1-…";
+    codeInput.style.cssText = "font-size:1.05em;padding:14px;border-radius:14px;border:2px solid #c9b98a;min-width:230px;text-transform:uppercase;";
+    const loadCodeBtn = document.createElement("button");
+    loadCodeBtn.type = "button";
+    loadCodeBtn.className = "cmd-btn";
+    loadCodeBtn.textContent = "📥 Load a Beat Code";
+    loadCodeBtn.addEventListener("click", () => {
+      const beat = decodeBeat(codeInput.value);
+      if (!beat) { speak("Hmm — that code doesn't look right. Check the letters and numbers and try again!"); return; }
+      applyBeat(beat);
+      fanfare();
+      speak("Beat loaded! Somebody shared this beat with you! Press Play My Beat to hear it!");
+    });
+    loadRow.appendChild(codeInput);
+    loadRow.appendChild(loadCodeBtn);
+    libWrap.appendChild(loadRow);
+    area.appendChild(libWrap);
+    renderLibrary();
   }
 }
 
@@ -2580,7 +2749,7 @@ function sophiaStage(stage) {
       area.innerHTML = "";
       if (r >= rounds.length) return;
       const q = rounds[r];
-      speak("Sophia! Find " + q.name + "! Tap the " + q.name.toLowerCase() + " rainbow color!", true);
+      speak(player().short + "! Find " + q.name + "! Tap the " + q.name.toLowerCase() + " rainbow color!", true);
       const big = document.createElement("div");
       big.className = "big-number";
       big.textContent = "🌈";
@@ -2595,7 +2764,7 @@ function sophiaStage(stage) {
         if (c === q.color) {
           fanfare();
           r += 1;
-          if (r >= rounds.length) { speak(q.name + "! You found ALL the rainbow colors, Sophia!"); setTimeout(nextStage, 1500); }
+          if (r >= rounds.length) { speak(q.name + "! You found ALL the rainbow colors, " + player().short + "!"); setTimeout(nextStage, 1500); }
           else { speak(q.name + "! Yes!"); setTimeout(render, 1100); }
         } else {
           b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
@@ -2618,7 +2787,7 @@ function sophiaStage(stage) {
       area.innerHTML = "";
       if (r >= rounds.length) return;
       const q = rounds[r];
-      speak("How many horses do you see, Sophia? Count with Ember!", true);
+      speak("How many horses do you see, " + player().short + "? Count with Ember!", true);
       const v = document.createElement("div");
       v.className = "visual-row";
       v.style.fontSize = "3em";
@@ -2628,7 +2797,7 @@ function sophiaStage(stage) {
         if (n === q.n) {
           fanfare();
           r += 1;
-          if (r >= rounds.length) { speak("Five... four... you counted ALL the horses, Sophia!"); setTimeout(nextStage, 1500); }
+          if (r >= rounds.length) { speak("You counted ALL the horses, " + player().short + "!"); setTimeout(nextStage, 1500); }
           else { speak("Yes! " + NUM[q.n] + " horses!"); setTimeout(render, 1200); }
         } else {
           b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
@@ -2665,7 +2834,7 @@ function sophiaStage(stage) {
         if (item.kind === q.name) {
           fanfare();
           r += 1;
-          if (r >= rounds.length) { speak("You found every shape, Sophia! The meadow is AWAKE!"); setTimeout(nextStage, 1500); }
+          if (r >= rounds.length) { speak("You found every shape, " + player().short + "! The meadow is AWAKE!"); setTimeout(nextStage, 1500); }
           else { speak("Yes! You found it!"); setTimeout(render, 1200); }
         } else {
           b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
@@ -3021,6 +3190,33 @@ function rocketStage(stage) {
     }
     render();
   }
+
+  if (stage === 5) { // Pattern Power — sequences that grow, shrink, and double
+    const rounds = [
+      { q: "2, 4, 6, 8, … what comes NEXT?", opts: ["9", "10", "12"], ans: "10", say: "Skip counting by TWOS! 2, 4, 6, 8, 10!" },
+      { q: "5, 10, 15, 20, … what comes NEXT?", opts: ["22", "25", "30"], ans: "25", say: "Counting by FIVES! 5, 10, 15, 20, 25!" },
+      { q: "3, 6, 9, 12, … what comes NEXT?", opts: ["13", "15", "18"], ans: "15", say: "Threes! 3, 6, 9, 12, 15 — skip counting by 3 is a multiplication superpower!" },
+      { q: "10, 9, 8, 7, … what comes NEXT?", opts: ["5", "6", "8"], ans: "6", say: "Counting DOWN! After 7 comes 6 when the pattern shrinks!" },
+      { q: "1, 2, 4, 8, … each number DOUBLES! What comes NEXT?", opts: ["10", "12", "16"], ans: "16", say: "DOUBLING! 1, 2, 4, 8, 16 — this pattern grows like a rocket taking off!" }
+    ];
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= rounds.length) return;
+      const q = rounds[r];
+      speak("Pattern Power! " + q.q, true);
+      const note = document.createElement("p");
+      note.className = "visual-note";
+      note.textContent = "🔢 " + q.q;
+      area.appendChild(note);
+      numRow(q.opts, q.ans,
+        () => { fanfare(); r += 1;
+          if (r >= rounds.length) { speak(q.say + " Pattern Master!"); setTimeout(nextStage, 1700); }
+          else { speak(q.say); setTimeout(render, 1600); } },
+        () => speak("Look at how the numbers JUMP. Is each jump the same size?"));
+    }
+    render();
+  }
 }
 
 
@@ -3360,6 +3556,15 @@ function starsStage(stage) {
       { q: "How long does sunlight take to travel to Earth?", opts: ["8 minutes", "8 hours", "8 days"], ans: 0, fact: "Eight minutes! The sunlight warming your face left the Sun 8 minutes ago!" }
     ], "Deep space questions! These are the mysteries real astronomers study!");
   }
+
+  if (stage === 4) { // Rocket Explorers — real astronaut knowledge
+    quiz([
+      { q: "Where do astronauts live and work in space for months at a time?", opts: ["The International Space Station", "On the Moon", "On Mars"], ans: 0, fact: "The International Space Station! It zooms all the way around Earth about every 90 minutes — astronauts see 16 sunrises every day!" },
+      { q: "Who were the first people to walk on the Moon, in 1969?", opts: ["Two robots", "Neil Armstrong and Buzz Aldrin", "No one has ever been"], ans: 1, fact: "Neil Armstrong and Buzz Aldrin, in 1969! Armstrong called it one small step — and one giant leap for humankind!" },
+      { q: "Why do astronauts FLOAT inside the space station?", opts: ["There is no air up there", "Magic space dust", "They are falling around Earth — endless free-fall!"], ans: 2, fact: "Floating is free-fall! The station and the astronauts fall around Earth together, forever — scientists call that being in orbit!" },
+      { q: "Which robot explorers drive around Mars taking pictures and testing rocks?", opts: ["Rovers like Perseverance", "Submarines", "Trains"], ans: 0, fact: "Mars rovers! Perseverance landed on Mars in 2021 — and it even carried a tiny helicopter named Ingenuity, the first aircraft to fly on another planet!" }
+    ], "Rocket Explorers! Time for real astronaut knowledge!");
+  }
 }
 
 
@@ -3531,9 +3736,90 @@ function zenStage(stage) {
         count.textContent = "⭐ Wishes sent: " + sent + " of " + wishes.length;
         fanfare();
         if (sent >= wishes.length) {
-          speak(w.wish + " And now the most important wish of all, from Ember: " + player().hero + ", you are LOVED. Exactly as you are. Today, tomorrow, always.");
+          speak(w.wish + " And now the most important wish of all: " + player().hero + ", Mom and Dad LOVE you. Exactly as you are. Today, tomorrow, always.");
           setTimeout(nextStage, 2600);
         } else speak(w.wish);
+      });
+      row.appendChild(b);
+    });
+    area.appendChild(row);
+  }
+
+  if (stage === 4) { // The Gratitude Garden — thankfulness, grown one tap at a time
+    speak("Now: the Gratitude Garden. Gratitude means noticing the good things and saying thank you in your heart. Tap each gift!", true);
+    const gifts = [
+      { e: "👨‍👩‍👧‍👦", line: "Grateful for family. Mom and Dad are grateful for YOU every single day — you are their favorite gift of all." },
+      { e: "🍓", line: "Grateful for food that helps us grow. Thank you, Earth, for berries and bread and honey!" },
+      { e: "🏡", line: "Grateful for home — a safe, warm place where we belong." },
+      { e: "🌳", line: "Grateful for nature: trees that give us shade, flowers that feed the bees, rain that helps everything grow." },
+      { e: "💪", line: "Grateful for our bodies — strong legs for running, hands for building, hearts for loving." },
+      { e: "🎵", line: "Grateful for music and stories and play — the things that make our hearts dance!" }
+    ];
+    let tapped = 0;
+    const count = document.createElement("p");
+    count.className = "fact-line";
+    count.textContent = "🌻 Gratitude flowers: 0 of " + gifts.length;
+    area.appendChild(count);
+    const row = document.createElement("div");
+    row.className = "shape-grid";
+    gifts.forEach(g => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "group-btn wish-btn";
+      b.innerHTML = `<span style="font-size:2.4em">${g.e}</span>`;
+      b.addEventListener("click", () => {
+        if (b.disabled) return;
+        b.disabled = true;
+        b.classList.add("found");
+        tapped += 1;
+        count.textContent = "🌻 Gratitude flowers: " + tapped + " of " + gifts.length;
+        fanfare();
+        if (tapped >= gifts.length) {
+          speak(g.line + " A grateful heart glows like a garden in the sun. Mom and Dad love watching yours grow.");
+          setTimeout(nextStage, 2600);
+        } else speak(g.line);
+      });
+      row.appendChild(b);
+    });
+    area.appendChild(row);
+  }
+
+  if (stage === 5) { // Sleepy Stars — a gentle body scan for restful calm
+    speak("Last, the Sleepy Stars body scan. Tap each glowing star and let that part of your body rest, soft and heavy like a sleepy dragon.", true);
+    const parts = [
+      { e: "🦶", w: "feet", line: "Let your feet rest. They carried you on so many adventures today. Thank you, feet." },
+      { e: "🦵", w: "legs", line: "Let your legs rest, soft and heavy. No more running — just resting." },
+      { e: "🫶", w: "tummy", line: "Let your tummy rest. Breathe in sloooowly… and out. Like a wave going back to the sea." },
+      { e: "✋", w: "hands", line: "Let your hands rest. They built and drew and played so well today." },
+      { e: "😌", w: "shoulders and face", line: "Let your shoulders drop, soft as snow. Let your face be smooth and peaceful." },
+      { e: "💛", w: "heart", line: "And your heart. Your heart is calm, and brave, and so very loved. Feel it beating: lub-dub, lub-dub, all is well." }
+    ];
+    let idx = 0;
+    const cue = document.createElement("p");
+    cue.className = "stage-msg";
+    cue.textContent = "Tap the star for your feet 🦶";
+    area.appendChild(cue);
+    const row = document.createElement("div");
+    row.className = "shape-grid";
+    parts.forEach((p, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "group-btn wish-btn";
+      b.innerHTML = `<span style="font-size:2.4em">${p.e}</span><br><small>${p.w}</small>`;
+      b.addEventListener("click", () => {
+        if (i !== idx) { speak("Start with your " + parts[idx].w + " — we rest our body one star at a time, from the ground up."); return; }
+        b.disabled = true;
+        b.classList.add("found");
+        idx += 1;
+        fanfare();
+        if (idx >= parts.length) {
+          cue.textContent = "Whole body resting. 🌙";
+          speak(p.line + " Your whole body is calm and restful now. You are safe, you are peaceful — and Mom and Dad love you, always.");
+          setTimeout(nextStage, 2800);
+        } else {
+          cue.textContent = "Tap the star for your " + parts[idx].w + " " + parts[idx].e;
+          speak(p.line);
+        }
       });
       row.appendChild(b);
     });
@@ -3798,7 +4084,7 @@ function renderNameLetters() {
         expected += 1;
         if (expected >= name.length) {
           fanfare();
-          speak(name + "! That's YOUR name, " + player().hero + "! And you are so loved!");
+          speak(name + "! That's YOUR name, " + player().hero + "! And Mom and Dad love you so, so much!");
           expected = 0;
           setTimeout(() => wrap.querySelectorAll(".name-letter").forEach(x => x.classList.remove("lit")), 2400);
         } else speak("Letter " + letter + "!");
@@ -3821,8 +4107,8 @@ function renderPlayerUI() {
     : "Princess Sophia's garden: Rainbow Meadow, horses, colors and counting — her gems save separately!";
   const st = $("storyText");
   if (st) st.innerHTML = playerId === "klaus"
-    ? "Ember the dragon is waiting for you, Klausaiyan!<br>The garden flowers fell asleep. Only a shape hero can wake them up…<br>And remember — you are loved, exactly as you are. 💛"
-    : "Ember the dragon is waiting for you, Princess Sophia!<br>The Rainbow Meadow is sleepy — the horses need your colors to wake it up…<br>And remember — you are loved, exactly as you are. 💛";
+    ? "Ember the dragon is waiting for you, Klausaiyan!<br>The garden flowers fell asleep. Only a shape hero can wake them up…<br>And remember — Mom and Dad love you, exactly as you are. 💛"
+    : "Ember the dragon is waiting for you, Princess Sophia!<br>The Rainbow Meadow is sleepy — the horses need your colors to wake it up…<br>And remember — Mom and Dad love you, exactly as you are. 💛";
 }
 function switchPlayer(id) {
   if (!PLAYERS[id] || id === playerId) { renderPlayerUI(); return; }
