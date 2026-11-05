@@ -1,6 +1,6 @@
 // ===== Klausaiyan and the Geometry Garden — prototype =====
 const $ = id => document.getElementById(id);
-const NUM = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
+const NUM = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"];
 const SCALE = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66, 1318.51];
 
 let audioCtx = null;
@@ -50,7 +50,11 @@ const LEVELS = {
   animals: { title: "Animal Kingdom", stages: 4, gem: "🦁", celebrateEmoji: "🦁",
     celebrateText: "Ember says: Habitats, animal families, riddles, and baby animal names — you are a true friend of animals!" },
   tales: { title: "Ember's Story Tales", stages: 2, gem: "📖", celebrateEmoji: "📖",
-    celebrateText: "Ember says: Two whole stories, lived by YOU! Stories teach our hearts to be brave, patient, and kind!" }
+    celebrateText: "Ember says: Two whole stories, lived by YOU! Stories teach our hearts to be brave, patient, and kind!" },
+  sacred: { title: "Sacred Geometry Studio", stages: 3, gem: "🌼", celebrateEmoji: "🌼",
+    celebrateText: "Ember says: You grew the Seed of Life from ONE single circle, climbed the Fibonacci staircase, and found the secret flower hiding where two circles hold hands!" },
+  play: { title: "Ember's Playtime", stages: 3, gem: "🎈", celebrateEmoji: "🎈",
+    celebrateText: "Ember says: You kept the balloon up, froze like a statue when the music stopped, and shared a picnic perfectly fairly — playing IS learning, and you are wonderful at it!" }
 };
 
 // Love notes: every celebration ends by reminding them they are loved —
@@ -85,7 +89,9 @@ const TELLS = {
   stars: "🌟 Show & Tell Mission: tell someone, “Sunlight takes 8 minutes to reach us — and a light-year is a DISTANCE!”",
   zen: "🌟 Show & Tell Mission: teach someone the dragon breath — breathe in slowly, breathe out even slower — then tell them one kind wish!",
   animals: "🌟 Show & Tell Mission: tell someone, “A group of wolves is called a PACK — and elephants talk in rumbles too low to hear!”",
-  tales: "🌟 Show & Tell Mission: retell Ember's story in your own words — and tell someone the lesson at its heart!"
+  tales: "🌟 Show & Tell Mission: retell Ember's story in your own words — and tell someone the lesson at its heart!",
+  sacred: "🌟 Show & Tell Mission: teach someone the Fibonacci chant — 1, 1, 2, 3, 5, 8 — each number is the two before it, added together!",
+  play: "🌟 Show & Tell Mission: teach someone Keepy Uppy — keep a balloon (or a scarf!) in the air and count every bounce out loud!"
 };
 
 const WORLD_KEYS = ["circle", "hex", "planet", "triangle", "square", "spiral"];
@@ -216,6 +222,7 @@ try {
   if (window.speechSynthesis) speechSynthesis.onvoiceschanged = pickPrettyVoice;
 } catch (e) {}
 
+let speakGen = 0;
 function speak(text, isInstruction = false) {
   if (isInstruction) {
     lastInstruction = text;
@@ -230,13 +237,28 @@ function speak(text, isInstruction = false) {
       .replace(/Klausaiyan/g, "Klouse Say-yen")
       .replace(/\bdinos\b/gi, "dye-nose")
       .replace(/\bdino\b/gi, "dye-no");
+    // Round 11 voice engine — built for the Fire tablet, whose speech engine
+    // was dropping everything after the first queued chunk (the children
+    // heard their name, then silence). Three defenses:
+    //  1) INSTRUCTIONS travel as ONE whole utterance — they must arrive whole.
+    //  2) Longer lines still split into sentences, but the sentences are
+    //     CHAINED: each one is only spoken when the previous one ends,
+    //     instead of all being queued in the same instant as the cancel.
+    //  3) A short breath after cancel() before the first word — several
+    //     tablet engines swallow a speak that lands in the same tick.
+    const gen = ++speakGen;
     speechSynthesis.cancel();
-    // Speak sentence by sentence: natural little pauses between sentences make
-    // the voice sound like storytelling instead of one long robot run-on, and
-    // short chunks never get cut off the way very long utterances can be.
-    const chunks = spoken.match(/[^.!?…]+[.!?…]*["”']?\s*/g) || [spoken];
-    chunks.map(s => s.trim()).filter(Boolean).forEach(part => {
-      const u = new SpeechSynthesisUtterance(part);
+    let parts;
+    if (isInstruction) parts = [spoken];
+    else {
+      parts = (spoken.match(/[^.!?…]+[.!?…]*["”']?\s*/g) || [spoken])
+        .map(s => s.trim()).filter(Boolean);
+      if (!parts.length) parts = [spoken];
+    }
+    let idx = 0;
+    const nextPart = () => {
+      if (gen !== speakGen || idx >= parts.length) return;
+      const u = new SpeechSynthesisUtterance(parts[idx]);
       if (prettyVoice) u.voice = prettyVoice;
       // Miss Rachel pace: unhurried and crisply enunciated, with a warm lift —
       // "practically perfect" storyteller energy, as far as the device allows.
@@ -244,9 +266,26 @@ function speak(text, isInstruction = false) {
       // Google voices sound best near their natural pitch; others get a
       // gentle lift so they sound friendly rather than flat.
       u.pitch = prettyVoice && /google/i.test(prettyVoice.name) ? 1.02 : 1.1;
-      speechSynthesis.speak(u);
-    });
+      u.onend = () => { idx += 1; nextPart(); };
+      u.onerror = () => { idx += 1; nextPart(); };
+      try { speechSynthesis.speak(u); } catch (e) {}
+    };
+    setTimeout(nextPart, 60);
   } catch (e) {}
+}
+
+// Gentle repeats for pre-readers: a child who cannot read yet needs to HEAR
+// the instruction again if nothing has been tapped for a while. Armed per
+// round; any new stage render supersedes the pending repeat.
+let gentleToken = 0;
+function armGentleRepeat(keyName, stageNum, text, repeatsLeft = 3) {
+  const token = ++gentleToken;
+  setTimeout(() => {
+    if (token !== gentleToken || repeatsLeft <= 0) return;
+    if (!current || current.key !== keyName || current.stage !== stageNum) return;
+    speak(text, true);
+    armGentleRepeat(keyName, stageNum, text, repeatsLeft - 1);
+  }, 10000);
 }
 
 
@@ -289,6 +328,8 @@ function renderMap() {
   tg("worldZen", "done", !!gems.zen);
   tg("worldAnimals", "done", !!gems.animals);
   tg("worldTales", "done", !!gems.tales);
+  tg("worldSacred", "done", !!gems.sacred);
+  tg("worldPlay", "done", !!gems.play);
   const fl = $("factLine");
   if (fl) fl.textContent = discoveredFacts.size > 0
     ? `⭐ Facts discovered: ${discoveredFacts.size} of ${DISCOVER.length} — keep exploring!`
@@ -325,12 +366,14 @@ function renderStage() {
   const total = LEVELS[key].stages;
   $("stageDots").textContent = "● ".repeat(stage + 1) + "○ ".repeat(total - stage - 1);
   $("stageArea").innerHTML = "";
+  gentleToken += 1; // a new stage or round cancels any pending gentle repeat
   const fn = { circle: circleStage, hex: hexStage, planet: planetStage,
     triangle: triangleStage, square: squareStage, spiral: spiralStage, flower: flowerStage,
     match: matchStage, frog: frogStage, dj: djStage, keys: keysStage,
     math: mathStage, read: readStage, sophia: sophiaStage, geo: geoStage,
     rocket: rocketStage, wizard: wizardStage, stars: starsStage,
-    zen: zenStage, animals: animalsStage, tales: talesStage }[key];
+    zen: zenStage, animals: animalsStage, tales: talesStage,
+    sacred: sacredStage, play: playStage }[key];
   try { fn(stage); }
   catch (e) { $("stageMsg").textContent = "Oh no — this world got tangled! Tell Mommy to refresh the page!"; }
   stageAdvancing = false;
@@ -1238,7 +1281,13 @@ const DISCOVER = [
   { e: "\uD83D\uDC0B", n: "Whale", facts: ["The blue whale is the biggest animal that has EVER lived \u2014 bigger than any dinosaur!", "Whales sing songs that can travel for miles under the sea!", "Whales breathe air, just like you \u2014 they must come up to take a breath!"] },
   { e: "\uD83E\uDD8B", n: "Butterfly", facts: ["A butterfly tastes with its FEET!", "Every butterfly begins life as a tiny caterpillar!", "A butterfly's wings are covered in tiny, tiny scales!"] },
   { e: "\uD83D\uDC22", n: "Turtle", facts: ["Some turtles live for more than 100 years!", "Sea turtles find their way across whole oceans and return to the beach where they were born!", "A turtle's shell is part of its skeleton \u2014 it can feel when you touch it!"] },
-  { e: "\uD83D\uDC3C", n: "Panda", facts: ["Pandas spend almost all day eating bamboo!", "A newborn panda is tiny \u2014 about the size of a stick of butter!", "Pandas have a special thumb just for holding bamboo!"] }
+  { e: "\uD83D\uDC3C", n: "Panda", facts: ["Pandas spend almost all day eating bamboo!", "A newborn panda is tiny \u2014 about the size of a stick of butter!", "Pandas have a special thumb just for holding bamboo!"] },
+  { e: "❄️", n: "Snowflake", facts: ["Every snowflake has SIX arms \u2014 the same six as a honeycomb!", "No two snowflakes are exactly alike \u2014 each one is a tiny, one-of-a-kind star!", "A snowflake is water that froze into a crystal while falling through cold air!"] },
+  { e: "☄️", n: "Comet", facts: ["A comet is a giant dirty snowball flying around the Sun!", "A comet's glowing tail always points AWAY from the Sun!", "Halley's Comet comes back to visit us about every 75 years!"] },
+  { e: "\uD83C\uDF31", n: "Seed", facts: ["Inside every tiny seed, a whole plant is sleeping!", "Some seeds can sleep for years and years, patiently waiting for rain!", "A seed knows exactly when spring has come \u2014 it can feel the warm soil!"] },
+  { e: "\uD83C\uDF0B", n: "Volcano", facts: ["A volcano is a mountain that can erupt with melted rock called lava!", "There are volcanoes hiding under the ocean, too!", "After a volcano, its ash helps plants grow super strong!"] },
+  { e: "\uD83C\uDF08", n: "Rainbow", facts: ["A rainbow appears when sunlight shines through raindrops!", "A rainbow is really a whole CIRCLE \u2014 from the ground we only see half!", "Rainbow colors always line up in the same order: red, orange, yellow, green, blue, indigo, violet!"] },
+  { e: "\uD83C\uDF0C", n: "Galaxy", facts: ["Our Sun is just ONE star in the Milky Way galaxy \u2014 and there are billions more!", "Many galaxies are giant SPIRALS \u2014 like a spiral shell, but made of stars!", "Light from faraway galaxies has traveled for billions of years to reach your eyes!"] }
 ];
 
 function loadFacts() {
@@ -2749,7 +2798,9 @@ function sophiaStage(stage) {
       area.innerHTML = "";
       if (r >= rounds.length) return;
       const q = rounds[r];
-      speak(player().short + "! Find " + q.name + "! Tap the " + q.name.toLowerCase() + " rainbow color!", true);
+      const instr = player().short + "! Find " + q.name + "! Tap the " + q.name.toLowerCase() + " rainbow color!";
+      speak(instr, true);
+      armGentleRepeat("sophia", 0, instr);
       const big = document.createElement("div");
       big.className = "big-number";
       big.textContent = "🌈";
@@ -2787,7 +2838,9 @@ function sophiaStage(stage) {
       area.innerHTML = "";
       if (r >= rounds.length) return;
       const q = rounds[r];
-      speak("How many horses do you see, " + player().short + "? Count with Ember!", true);
+      const instr = "How many horses do you see, " + player().short + "? Count with Ember!";
+      speak(instr, true);
+      armGentleRepeat("sophia", 1, instr);
       const v = document.createElement("div");
       v.className = "visual-row";
       v.style.fontSize = "3em";
@@ -2820,6 +2873,7 @@ function sophiaStage(stage) {
       if (r >= rounds.length) return;
       const q = rounds[r];
       speak(q.say, true);
+      armGentleRepeat("sophia", 2, q.say);
       const items = [{ kind: q.name }, { kind: q.others[0] }, { kind: q.others[1] }];
       // Shuffle gently so the answer is not always first.
       const order = [items[(r + 1) % 3], items[(r + 2) % 3], items[r % 3]];
@@ -3828,6 +3882,289 @@ function zenStage(stage) {
 }
 
 
+// ===== SACRED GEOMETRY STUDIO (Seed of Life, Fibonacci, the vesica flower) =====
+function sacredStage(stage) {
+  const area = $("stageArea");
+
+  function cardRow(cards, onPick) {
+    const wrap = document.createElement("div");
+    wrap.className = "word-cards";
+    cards.forEach(c => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "word-card";
+      b.innerHTML = `<span class="wc-emoji">${c.e || "✨"}</span><span class="wc-word sm">${c.w}</span>`;
+      b.addEventListener("click", () => onPick(c, b));
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+  }
+
+  if (stage === 0) { // Grow the Seed of Life — one circle, then six holding hands
+    speak("Sacred Geometry Studio! First: grow the Seed of Life. Tap the circles and count them as they bloom!", true);
+    const wrap = document.createElement("div");
+    wrap.className = "flower-stage";
+    const spots = [[50, 50]];
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI / 3) * i - Math.PI / 2;
+      spots.push([50 + 26 * Math.cos(a), 50 + 26 * Math.sin(a)]);
+    }
+    let lit = 0;
+    spots.forEach(([x, y], i) => {
+      const c = document.createElement("div");
+      c.className = "flower-petal";
+      c.style.left = x + "%";
+      c.style.top = y + "%";
+      c.style.zIndex = i === 0 ? 3 : 2;
+      c.addEventListener("click", () => {
+        if (c.classList.contains("lit")) return;
+        c.classList.add("lit");
+        lit += 1;
+        chime(lit + 1);
+        if (lit === 1) speak("One! One circle, all alone. Every pattern in the whole universe begins with ONE.");
+        else if (lit >= 7) {
+          fanfare();
+          speak("Seven circles! One in the middle, and six holding hands around it. This is the SEED OF LIFE — one of the oldest, most loved patterns on Earth. From one circle, everything grows!");
+          setTimeout(nextStage, 2400);
+        } else speak(NUM[lit] + " circles!");
+      });
+      wrap.appendChild(c);
+    });
+    area.appendChild(wrap);
+  }
+
+  if (stage === 1) { // The Fibonacci staircase — each number is the two before it
+    const rounds = [
+      { q: "The pattern goes: 1, 1, 2, 3, … Each number is the two before it ADDED together. 2 + 3 = what comes next?", opts: ["4", "5", "6"], ans: "5",
+        say: "Five! 1, 1, 2, 3, 5! You just climbed the Fibonacci staircase!" },
+      { q: "Keep climbing: 1, 1, 2, 3, 5, … 3 + 5 = what comes next?", opts: ["7", "8", "9"], ans: "8",
+        say: "Eight! 1, 1, 2, 3, 5, 8! Snails, sunflowers, and pinecones all grow with this pattern — it is nature's favorite number secret!" }
+    ];
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= rounds.length) return;
+      const q = rounds[r];
+      speak("Fibonacci staircase! " + q.q, true);
+      const note = document.createElement("p");
+      note.className = "visual-note";
+      note.textContent = "🌀 " + q.q;
+      area.appendChild(note);
+      cardRow(q.opts.map(w => ({ w, e: "🔢" })), (c, b) => {
+        if (c.w === q.ans) {
+          b.classList.add("right");
+          fanfare();
+          r += 1;
+          if (r >= rounds.length) { speak(q.say + " Fibonacci master!"); setTimeout(nextStage, 2200); }
+          else { speak(q.say); setTimeout(render, 2000); }
+        } else {
+          b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+          speak("Add the two numbers before it — that's the Fibonacci rule!");
+        }
+      });
+    }
+    render();
+  }
+
+  if (stage === 2) { // Two circles holding hands — the vesica, then a six-petal flower
+    speak("Last wonder: two circles holding hands. Look where the two circles cross — a secret petal hides in the middle!", true);
+    const wrap = document.createElement("div");
+    wrap.className = "flower-stage";
+    [[36, 50], [64, 50]].forEach(([x, y]) => {
+      const c = document.createElement("div");
+      c.className = "flower-petal lit";
+      c.style.left = x + "%";
+      c.style.top = y + "%";
+      wrap.appendChild(c);
+    });
+    area.appendChild(wrap);
+    const note = document.createElement("p");
+    note.className = "visual-note";
+    note.textContent = "How many petal shapes hide in the middle, where the two circles cross?";
+    area.appendChild(note);
+    cardRow(["1", "2", "3"].map(w => ({ w, e: "🌸" })), (c, b) => {
+      if (c.w === "1") {
+        b.classList.add("right");
+        fanfare();
+        speak("ONE petal! It is called the vesica — the shape made when two circles hold hands. Artists and builders have drawn it for thousands of years! Now tap the six petals of the garden flower!");
+        setTimeout(phaseTwo, 2600);
+      } else {
+        b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+        speak("Look right in the middle, where the circles cross each other!");
+      }
+    });
+    function phaseTwo() {
+      if (!note.isConnected) return; // the child wandered off — don't hijack the new stage
+      area.innerHTML = "";
+      const wrap2 = document.createElement("div");
+      wrap2.className = "flower-stage";
+      let lit = 0;
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 3) * i - Math.PI / 2;
+        const c = document.createElement("div");
+        c.className = "flower-petal";
+        c.style.left = (50 + 26 * Math.cos(a)) + "%";
+        c.style.top = (50 + 26 * Math.sin(a)) + "%";
+        c.addEventListener("click", () => {
+          if (c.classList.contains("lit")) return;
+          c.classList.add("lit");
+          lit += 1;
+          chime(lit + 2);
+          if (lit >= 6) {
+            fanfare();
+            speak("Six petals, all the same, dancing around the middle! Nature LOVES the number six — snowflakes, honeycombs, and flowers all count to six. You found the pattern!");
+            setTimeout(nextStage, 2400);
+          } else speak(NUM[lit] + " petals!");
+        });
+        wrap2.appendChild(c);
+      }
+      area.appendChild(wrap2);
+    }
+  }
+}
+
+
+// ===== EMBER'S PLAYTIME (learning through play — keepy uppy, freeze dance, fair sharing) =====
+function playStage(stage) {
+  const area = $("stageArea");
+
+  function cardRow(cards, onPick) {
+    const wrap = document.createElement("div");
+    wrap.className = "word-cards";
+    cards.forEach(c => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "word-card";
+      b.innerHTML = `<span class="wc-emoji">${c.e || "✨"}</span><span class="wc-word sm">${c.w}</span>`;
+      b.addEventListener("click", () => onPick(c, b));
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+  }
+
+  if (stage === 0) { // Keepy Uppy — tap the balloon, count the bounces
+    speak("Ember's Playtime! First: Keepy Uppy! Tap the balloon to bounce it — and count every bounce out loud with Ember! Get to fifteen!", true);
+    let bounces = 0;
+    const count = document.createElement("p");
+    count.className = "fact-line";
+    count.textContent = "🎈 Bounces: 0 of 15";
+    area.appendChild(count);
+    const balloon = document.createElement("button");
+    balloon.type = "button";
+    balloon.className = "group-btn";
+    balloon.style.cssText = "font-size:6em;padding:26px 44px;border-radius:50%;transition:transform .18s ease;";
+    balloon.textContent = "🎈";
+    balloon.addEventListener("click", () => {
+      if (bounces >= 15) return;
+      bounces += 1;
+      count.textContent = "🎈 Bounces: " + bounces + " of 15";
+      chime(1 + (bounces % 7));
+      balloon.style.transform = "translateY(-30px) scale(1.07)";
+      setTimeout(() => { balloon.style.transform = ""; }, 190);
+      if (bounces >= 15) {
+        fanfare();
+        speak("FIFTEEN bounces! You kept it up the whole game! Counting while you play — that's real learning!");
+        setTimeout(nextStage, 2000);
+      } else speak(NUM[bounces] + "!");
+    });
+    area.appendChild(balloon);
+  }
+
+  if (stage === 1) { // Freeze Dance — music plays, music stops, tap the called shape
+    const rounds = [
+      { shape: "triangle", say: "FREEZE! Quick as a statue — tap the TRIANGLE!" },
+      { shape: "hexagon", say: "FREEZE! Statue time — tap the HEXAGON, the bee shape!" },
+      { shape: "circle", say: "FREEZE! Don't move a muscle — tap the CIRCLE!" }
+    ];
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= rounds.length) return;
+      const q = rounds[r];
+      speak("Freeze Dance! Press the music button, dance while it plays… and when the music STOPS, freeze and listen!", true);
+      const musicBtn = document.createElement("button");
+      musicBtn.type = "button";
+      musicBtn.className = "cmd-btn cmd-go";
+      musicBtn.textContent = "🎵 Play the Music!";
+      area.appendChild(musicBtn);
+      const row = document.createElement("div");
+      row.className = "shape-grid";
+      ["circle", "triangle", "square", "hexagon"].forEach(t => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "shape-btn";
+        b.appendChild(shapeDiv(t, "#7ecbff", 72));
+        b.disabled = true;
+        b.style.opacity = "0.45";
+        b.addEventListener("click", () => {
+          if (b.disabled) return;
+          if (t === q.shape) {
+            fanfare();
+            r += 1;
+            if (r >= rounds.length) { speak("You froze like a statue EVERY time! Listening ears and a still body — wonderful dancing!"); setTimeout(nextStage, 2000); }
+            else { speak("STATUE! You found the " + q.shape + "!"); setTimeout(render, 1600); }
+          } else {
+            b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+            speak("That's a shape — but Ember called the " + q.shape + "!");
+          }
+        });
+        row.appendChild(b);
+      });
+      area.appendChild(row);
+      let played = false;
+      musicBtn.addEventListener("click", () => {
+        if (played) return;
+        played = true;
+        musicBtn.disabled = true;
+        musicBtn.textContent = "🎶 Dancing…";
+        speak("Music! Dance, dance, dance!");
+        [0, 2, 4, 5, 4, 2].forEach((n, i) => setTimeout(() => tone(SCALE[n], 0, 0.3), 330 * i));
+        setTimeout(() => {
+          if (!row.isConnected) return;
+          musicBtn.textContent = "🎵 Music stopped!";
+          row.querySelectorAll("button").forEach(b => { b.disabled = false; b.style.opacity = "1"; });
+          speak(q.say);
+        }, 330 * 6 + 350);
+      });
+    }
+    render();
+  }
+
+  if (stage === 2) { // Pretend Picnic — sharing fairly IS dividing
+    const rounds = [
+      { food: "🍓", n: 6, each: "3", opts: ["2", "3", "4"], say: "Six strawberries, shared by two plates: three each! Sharing fairly IS dividing — 6 divided by 2 is 3!" },
+      { food: "🍇", n: 8, each: "4", opts: ["3", "4", "5"], say: "Eight grapes: four on every plate! 8 divided by 2 is 4!" },
+      { food: "🫐", n: 10, each: "5", opts: ["4", "5", "6"], say: "Ten blueberries: five each! 10 divided by 2 is 5 — picnic perfect!" }
+    ];
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= rounds.length) return;
+      const q = rounds[r];
+      speak("Pretend Picnic! There are " + q.n + " treats and TWO plates. Share them FAIRLY — how many go on each plate?", true);
+      const v = document.createElement("div");
+      v.className = "visual-row";
+      v.style.fontSize = "2.2em";
+      v.textContent = q.food.repeat(q.n) + "  🍽️ 🍽️";
+      area.appendChild(v);
+      cardRow(q.opts.map(w => ({ w, e: q.food })), (c, b) => {
+        if (c.w === q.each) {
+          b.classList.add("right");
+          fanfare();
+          r += 1;
+          if (r >= rounds.length) { speak(q.say + " A fair picnic is a happy picnic!"); setTimeout(nextStage, 2100); }
+          else { speak(q.say); setTimeout(render, 1900); }
+        } else {
+          b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+          speak("Fair means BOTH plates get the same. Count the treats and split them in half!");
+        }
+      });
+    }
+    render();
+  }
+}
+
+
 // ===== ANIMAL KINGDOM (habitats, groups, riddles, babies) =====
 function animalsStage(stage) {
   const area = $("stageArea");
@@ -4152,6 +4489,8 @@ wire("worldStars", () => startLevel("stars"));
 wire("worldZen", () => startLevel("zen"));
 wire("worldAnimals", () => startLevel("animals"));
 wire("worldTales", () => startLevel("tales"));
+wire("worldSacred", () => startLevel("sacred"));
+wire("worldPlay", () => startLevel("play"));
 wire("worldDiscover", () => openDiscover());
 wire("discoverBack", () => { renderMap(); show("screenMap"); });
 wire("homeBtn", () => {
