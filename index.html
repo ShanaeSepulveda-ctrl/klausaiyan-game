@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -42,9 +42,18 @@
   <div id="nameLetters" class="name-letters" aria-label="The letters of Klausaiyan"></div>
   <p class="tap-hint">Tap the letters!</p>
 
+  <div class="player-picker">
+    <p class="player-label">Who is playing?</p>
+    <div class="player-row">
+      <button id="playerKlaus" class="player-btn" type="button"><span class="p-emoji">🦖</span> Klaus</button>
+      <button id="playerSophia" class="player-btn" type="button"><span class="p-emoji">🐴</span> Sophia</button>
+    </div>
+    <p id="playerGreeting" class="player-greeting"></p>
+  </div>
+
   <div class="story-card">
     <span class="ember">🐉</span>
-    <p>Ember the dragon is waiting for you, Klausaiyan!<br>
+    <p id="storyText">Ember the dragon is waiting for you, Klausaiyan!<br>
     The garden flowers fell asleep. Only a shape hero can wake them up…</p>
   </div>
 
@@ -61,6 +70,11 @@
   <p id="factLine" class="fact-line"></p>
 
   <div class="world-grid">
+    <button class="world-btn" id="worldSophia" type="button">
+      <span class="world-emoji">🌈</span>
+      <span class="world-name">Sophia's Rainbow Meadow</span>
+      <span class="world-soon">Gentle starter world — colors, horses, shapes!</span>
+    </button>
     <button class="world-btn" id="worldCircle" type="button">
       <span class="world-emoji">🌙</span>
       <span class="world-name">Circle Moon</span>
@@ -106,6 +120,34 @@
       <span class="world-emoji">⌨️</span>
       <span class="world-name">Keyboard Hero</span>
     </button>
+    <button class="world-btn" id="worldMath" type="button">
+      <span class="world-emoji">🧮</span>
+      <span class="world-name">Number Nebula</span>
+    </button>
+    <button class="world-btn" id="worldRead" type="button">
+      <span class="world-emoji">📚</span>
+      <span class="world-name">Story Star Library</span>
+    </button>
+    <button class="world-btn" id="worldGeo" type="button">
+      <span class="world-emoji">🔷</span>
+      <span class="world-name">Geometry Lab</span>
+      <span class="world-soon">Symmetry, 3D shapes, perimeter!</span>
+    </button>
+    <button class="world-btn" id="worldRocket" type="button">
+      <span class="world-emoji">🛸</span>
+      <span class="world-name">Rocket Math Lab</span>
+      <span class="world-soon">Times, divide, fractions, money!</span>
+    </button>
+    <button class="world-btn" id="worldWizard" type="button">
+      <span class="world-emoji">🧙</span>
+      <span class="world-name">Word Wizard Academy</span>
+      <span class="world-soon">Rhymes, sentences, big words!</span>
+    </button>
+    <button class="world-btn" id="worldStars" type="button">
+      <span class="world-emoji">🌌</span>
+      <span class="world-name">Star Scientist</span>
+      <span class="world-soon">Planet order, moon phases, black holes!</span>
+    </button>
     <button class="world-btn" id="worldDiscover" type="button">
       <span class="world-emoji">🔭</span>
       <span class="world-name">Explore &amp; Discover</span>
@@ -150,6 +192,6 @@
   </div>
 </div>
 
-<script src="game.js?v=6"></script>
+<script src="game.js?v=8"></script>
 </body>
 </html>
