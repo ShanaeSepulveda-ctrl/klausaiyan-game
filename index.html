@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -36,7 +36,7 @@
     </div>
     <div class="big-moon">🌕</div>
   </div>
-  <h1 class="game-title">Klausaiyan</h1>
+  <h1 class="game-title" id="gameTitle">Klausaiyan</h1>
   <p class="game-subtitle">and the Geometry Garden</p>
 
   <div id="nameLetters" class="name-letters" aria-label="The letters of Klausaiyan"></div>
@@ -46,7 +46,7 @@
     <p class="player-label">Who is playing?</p>
     <div class="player-row">
       <button id="playerKlaus" class="player-btn" type="button"><span class="p-emoji">🦖</span> Klaus</button>
-      <button id="playerSophia" class="player-btn" type="button"><span class="p-emoji">🐴</span> Sophia</button>
+      <button id="playerSophia" class="player-btn" type="button"><span class="p-emoji">👑</span> Sophia</button>
     </div>
     <p id="playerGreeting" class="player-greeting"></p>
   </div>
@@ -148,6 +148,21 @@
       <span class="world-name">Star Scientist</span>
       <span class="world-soon">Planet order, moon phases, black holes!</span>
     </button>
+    <button class="world-btn" id="worldZen" type="button">
+      <span class="world-emoji">🪷</span>
+      <span class="world-name">Mindfulness Journey</span>
+      <span class="world-soon">Dragon breath, feelings, kindness!</span>
+    </button>
+    <button class="world-btn" id="worldAnimals" type="button">
+      <span class="world-emoji">🦁</span>
+      <span class="world-name">Animal Kingdom</span>
+      <span class="world-soon">Habitats, riddles, baby animals!</span>
+    </button>
+    <button class="world-btn" id="worldTales" type="button">
+      <span class="world-emoji">📖</span>
+      <span class="world-name">Ember's Story Tales</span>
+      <span class="world-soon">Stories YOU help tell!</span>
+    </button>
     <button class="world-btn" id="worldDiscover" type="button">
       <span class="world-emoji">🔭</span>
       <span class="world-name">Explore &amp; Discover</span>
@@ -187,11 +202,12 @@
     <div class="celebrate-emoji" id="celebrateEmoji">💎</div>
     <h2 id="celebrateTitle">You did it, Klausaiyan!</h2>
     <p id="celebrateText">Ember is so proud of you!</p>
+    <p id="celebrateLove" class="celebrate-love"></p>
     <p id="celebrateTell" class="celebrate-tell"></p>
     <button id="celebrateBtn" class="big-play" type="button">Back to the Garden 🌸</button>
   </div>
 </div>
 
-<script src="game.js?v=8"></script>
+<script src="game.js?v=9"></script>
 </body>
 </html>
