@@ -54,7 +54,9 @@ const LEVELS = {
   sacred: { title: "Sacred Geometry Studio", stages: 3, gem: "🌼", celebrateEmoji: "🌼",
     celebrateText: "Ember says: You grew the Seed of Life from ONE single circle, climbed the Fibonacci staircase, and found the secret flower hiding where two circles hold hands!" },
   play: { title: "Ember's Playtime", stages: 3, gem: "🎈", celebrateEmoji: "🎈",
-    celebrateText: "Ember says: You kept the balloon up, froze like a statue when the music stopped, and shared a picnic perfectly fairly — playing IS learning, and you are wonderful at it!" }
+    celebrateText: "Ember says: You kept the balloon up, froze like a statue when the music stopped, and shared a picnic perfectly fairly — playing IS learning, and you are wonderful at it!" },
+  elements: { title: "Element Lab", stages: 3, gem: "🧪", celebrateEmoji: "🧪",
+    celebrateText: "Ember says: You met the elements of LIFE, answered like a real little chemist, and BUILT water out of hydrogen and oxygen — the whole world is made of elements, and now you know their secret names!" }
 };
 
 // Love notes: every celebration ends by reminding them they are loved —
@@ -91,7 +93,8 @@ const TELLS = {
   animals: "🌟 Show & Tell Mission: tell someone, “A group of wolves is called a PACK — and elephants talk in rumbles too low to hear!”",
   tales: "🌟 Show & Tell Mission: retell Ember's story in your own words — and tell someone the lesson at its heart!",
   sacred: "🌟 Show & Tell Mission: teach someone the Fibonacci chant — 1, 1, 2, 3, 5, 8 — each number is the two before it, added together!",
-  play: "🌟 Show & Tell Mission: teach someone Keepy Uppy — keep a balloon (or a scarf!) in the air and count every bounce out loud!"
+  play: "🌟 Show & Tell Mission: teach someone Keepy Uppy — keep a balloon (or a scarf!) in the air and count every bounce out loud!",
+  elements: "🌟 Show & Tell Mission: tell someone, “Water is H-2-O — two hydrogens and one oxygen, holding hands!”"
 };
 
 const WORLD_KEYS = ["circle", "hex", "planet", "triangle", "square", "spiral"];
@@ -330,6 +333,7 @@ function renderMap() {
   tg("worldTales", "done", !!gems.tales);
   tg("worldSacred", "done", !!gems.sacred);
   tg("worldPlay", "done", !!gems.play);
+  tg("worldElements", "done", !!gems.elements);
   const fl = $("factLine");
   if (fl) fl.textContent = discoveredFacts.size > 0
     ? `⭐ Facts discovered: ${discoveredFacts.size} of ${DISCOVER.length} — keep exploring!`
@@ -373,7 +377,7 @@ function renderStage() {
     math: mathStage, read: readStage, sophia: sophiaStage, geo: geoStage,
     rocket: rocketStage, wizard: wizardStage, stars: starsStage,
     zen: zenStage, animals: animalsStage, tales: talesStage,
-    sacred: sacredStage, play: playStage }[key];
+    sacred: sacredStage, play: playStage, elements: elementsStage }[key];
   try { fn(stage); }
   catch (e) { $("stageMsg").textContent = "Oh no — this world got tangled! Tell Mommy to refresh the page!"; }
   stageAdvancing = false;
@@ -1287,7 +1291,19 @@ const DISCOVER = [
   { e: "\uD83C\uDF31", n: "Seed", facts: ["Inside every tiny seed, a whole plant is sleeping!", "Some seeds can sleep for years and years, patiently waiting for rain!", "A seed knows exactly when spring has come \u2014 it can feel the warm soil!"] },
   { e: "\uD83C\uDF0B", n: "Volcano", facts: ["A volcano is a mountain that can erupt with melted rock called lava!", "There are volcanoes hiding under the ocean, too!", "After a volcano, its ash helps plants grow super strong!"] },
   { e: "\uD83C\uDF08", n: "Rainbow", facts: ["A rainbow appears when sunlight shines through raindrops!", "A rainbow is really a whole CIRCLE \u2014 from the ground we only see half!", "Rainbow colors always line up in the same order: red, orange, yellow, green, blue, indigo, violet!"] },
-  { e: "\uD83C\uDF0C", n: "Galaxy", facts: ["Our Sun is just ONE star in the Milky Way galaxy \u2014 and there are billions more!", "Many galaxies are giant SPIRALS \u2014 like a spiral shell, but made of stars!", "Light from faraway galaxies has traveled for billions of years to reach your eyes!"] }
+  { e: "\uD83C\uDF0C", n: "Galaxy", facts: ["Our Sun is just ONE star in the Milky Way galaxy \u2014 and there are billions more!", "Many galaxies are giant SPIRALS \u2014 like a spiral shell, but made of stars!", "Light from faraway galaxies has traveled for billions of years to reach your eyes!"] },
+  { e: "🫧", n: "Hydrogen", facts: ["Hydrogen is the LIGHTEST element of all \u2014 element number 1!", "The Sun is mostly hydrogen \u2014 it squeezes hydrogen to make sunshine!", "Water has hydrogen hiding inside it \u2014 two hydrogens in every drop's molecule!"] },
+  { e: "🎈", n: "Helium", facts: ["Helium is the gas that makes balloons float!", "Helium is so light that Earth can barely hold onto it \u2014 it floats away to space!", "The Sun MAKES helium out of hydrogen, deep in its middle!"] },
+  { e: "💎", n: "Carbon", facts: ["Diamonds and pencil lead are BOTH made of carbon!", "Every living thing \u2014 you, trees, elephants \u2014 is built with carbon!", "Charcoal, the black stuff left after a campfire, is almost all carbon!"] },
+  { e: "🌿", n: "Nitrogen", facts: ["Most of the air around you is nitrogen \u2014 about 78 of every 100 breaths!", "Plants need nitrogen to grow green and tall!", "Nitrogen helps your body build muscles \u2014 it is inside the food you eat!"] },
+  { e: "💨", n: "Oxygen", facts: ["You breathe oxygen in all day and all night \u2014 your body runs on it!", "Trees and plants MAKE oxygen from sunlight \u2014 thank a tree today!", "Fire needs oxygen to burn \u2014 that's why blowing on embers makes them glow!"] },
+  { e: "🦴", n: "Calcium", facts: ["Calcium is the element that makes your bones and teeth strong!", "Milk and cheese are full of calcium for growing skeletons!", "Seashells and chalk are made of calcium, too!"] },
+  { e: "🧲", n: "Iron", facts: ["Iron is the metal magnets love to stick to!", "Your blood has iron in it \u2014 it helps carry oxygen around your body!", "Deep in the middle of the Earth is a giant ball of iron \u2014 the core!"] },
+  { e: "🪙", n: "Gold", facts: ["Gold never rusts \u2014 gold coins from long, long ago are still shiny!", "Gold was made inside exploding stars, billions of years ago!", "Gold is so soft you can squish a lump of it with strong fingers!"] },
+  { e: "🏞️", n: "River", facts: ["Rivers always flow downhill, all the way to the sea!", "The Grand Canyon was carved by a river, one tiny bit of rock at a time, over millions of years!", "Rivers are highways and homes for fish, frogs, ducks, and otters!"] },
+  { e: "🏝️", n: "Ocean", facts: ["The oceans hold almost ALL the water on Earth!", "The Moon pulls the ocean up and down \u2014 that's what makes the tides!", "Most of the ocean has never been explored \u2014 it is deeper than the tallest mountain is high!"] },
+  { e: "⛰️", n: "Mountain", facts: ["Some mountains are still GROWING \u2014 a tiny bit taller every year!", "Mount Everest is the tallest mountain on Earth!", "Mountains make their own weather \u2014 that's why their tops wear snow hats!"] },
+  { e: "☁️", n: "Cloud", facts: ["A cloud is made of millions of tiny water drops, floating!", "Fog is a cloud that has come down to visit the ground!", "A big fluffy cloud can weigh as much as a hundred elephants \u2014 and still float!"] }
 ];
 
 function loadFacts() {
@@ -3652,16 +3668,27 @@ function zenStage(stage) {
     cue.className = "stage-msg";
     area.appendChild(cue);
     let breaths = 0;
+    // Drive the glow bubble with the Web Animations API as well as the CSS
+    // transition — on the tablet the transition alone was not moving it.
+    function breatheTo(big) {
+      const target = big ? "scale(1.45)" : "scale(1)";
+      try {
+        if (circle.animate) circle.animate(
+          [{ transform: circle.style.transform || "scale(1)" }, { transform: target }],
+          { duration: 4000, easing: "ease-in-out", fill: "forwards" });
+      } catch (e) {}
+      circle.style.transform = target;
+    }
     function cycle() {
       if (!circle.isConnected) return; // left the stage — stop quietly
       cue.textContent = "Breathe in… 🌸";
       speak("Breathe in, slowly…");
-      circle.style.transform = "scale(1.45)";
+      breatheTo(true);
       setTimeout(() => {
         if (!circle.isConnected) return;
         cue.textContent = "Breathe out… 🍃";
         speak("And breathe out, even slower…");
-        circle.style.transform = "scale(1)";
+        breatheTo(false);
         setTimeout(() => {
           if (!circle.isConnected) return;
           breaths += 1;
@@ -4059,8 +4086,13 @@ function playStage(stage) {
       bounces += 1;
       count.textContent = "🎈 Bounces: " + bounces + " of 15";
       chime(1 + (bounces % 7));
-      balloon.style.transform = "translateY(-30px) scale(1.07)";
-      setTimeout(() => { balloon.style.transform = ""; }, 190);
+      // Animate with the Web Animations API: the tablet was ignoring the
+      // CSS-transition version, so the balloon drives its own bounce now.
+      try {
+        if (balloon.animate) balloon.animate(
+          [{ transform: "translateY(0)" }, { transform: "translateY(-36px) scale(1.08)" }, { transform: "translateY(0)" }],
+          { duration: 400, easing: "ease-out" });
+      } catch (e) {}
       if (bounces >= 15) {
         fanfare();
         speak("FIFTEEN bounces! You kept it up the whole game! Counting while you play — that's real learning!");
@@ -4159,6 +4191,163 @@ function playStage(stage) {
           speak("Fair means BOTH plates get the same. Count the treats and split them in half!");
         }
       });
+    }
+    render();
+  }
+}
+
+
+// ===== ELEMENT LAB (the periodic table, the elements of life, molecule making) =====
+function elementsStage(stage) {
+  const area = $("stageArea");
+
+  const ELEMENTS = [
+    { sym: "H", name: "Hydrogen", num: 1, color: "#7ecbff", clue: "the LIGHTEST element of all — the Sun is mostly made of it!", fact: "Hydrogen! Element number 1 — the first element of all, and the most common thing in the whole universe!" },
+    { sym: "He", name: "Helium", num: 2, color: "#ffd94d", clue: "the giggly gas that makes balloons float up, up, up!", fact: "Helium! So light it floats away into the sky — that is why balloons fly!" },
+    { sym: "C", name: "Carbon", num: 6, color: "#b79cff", clue: "the element inside pencils AND diamonds — and inside every living thing!", fact: "Carbon! Pencils write with it, diamonds sparkle with it, and YOU are built with it!" },
+    { sym: "N", name: "Nitrogen", num: 7, color: "#8ff0c8", clue: "the element that fills most of the air all around you — plants love it!", fact: "Nitrogen! Most of every breath you take is nitrogen, and it helps plants grow tall and green!" },
+    { sym: "O", name: "Oxygen", num: 8, color: "#ff9ecb", clue: "the part of the air your body uses with every single breath!", fact: "Oxygen! Trees and plants make it, and you breathe it in all day and all night!" },
+    { sym: "Ca", name: "Calcium", num: 20, color: "#ffe98c", clue: "the element that makes your bones and teeth hard and strong!", fact: "Calcium! It builds your bones and teeth — seashells and even chalk are made of it!" }
+  ];
+  const bySym = {};
+  ELEMENTS.forEach(e => { bySym[e.sym] = e; });
+
+  function tile(e, onPick) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "group-btn";
+    b.style.background = `radial-gradient(circle at 35% 30%, #ffffff88, ${e.color})`;
+    b.style.color = "#22301f";
+    b.innerHTML = `<span style="font-size:2em;font-weight:800">${e.sym}</span><br><small>${e.name} · ${e.num}</small>`;
+    b.addEventListener("click", () => onPick(e, b));
+    return b;
+  }
+  function cardRow(cards, onPick) {
+    const wrap = document.createElement("div");
+    wrap.className = "word-cards";
+    cards.forEach(c => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "word-card";
+      b.innerHTML = `<span class="wc-emoji">${c.e || "✨"}</span><span class="wc-word sm">${c.w}</span>`;
+      b.addEventListener("click", () => onPick(c, b));
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+  }
+
+  if (stage === 0) { // Meet the elements of life — tap the one Ember describes
+    const order = ["O", "C", "H", "Ca", "He", "N"];
+    let r = 0;
+    speak("Welcome to the Element Lab, little scientist! Everything in the whole world — you, me, the oceans, the stars — is built from tiny building blocks called ELEMENTS. Let's meet the most important ones!", true);
+    const grid = document.createElement("div");
+    grid.className = "shape-grid";
+    area.appendChild(grid);
+    const tiles = {};
+    ELEMENTS.forEach(e => {
+      const b = tile(e, (el, btn) => {
+        if (el.sym === order[r]) {
+          btn.classList.add("found");
+          btn.disabled = true;
+          fanfare();
+          r += 1;
+          if (r >= order.length) { speak(el.fact + " You met ALL the elements of life!"); setTimeout(nextStage, 2200); }
+          else { speak(el.fact); setTimeout(ask, 2100); }
+        } else {
+          btn.classList.remove("wobble"); void btn.offsetWidth; btn.classList.add("wobble");
+          speak("That's " + el.name + "! Ember is looking for a different element. Listen again: find " + bySym[order[r]].name + "!");
+        }
+      });
+      tiles[e.sym] = b;
+      grid.appendChild(b);
+    });
+    function ask() {
+      const e = bySym[order[r]];
+      if (e) speak("Tap " + e.name.toUpperCase() + " — " + e.clue, true);
+    }
+    setTimeout(ask, 3400);
+  }
+
+  if (stage === 1) { // Element quiz — real chemistry knowledge
+    const rounds = [
+      { q: "The Sun is a giant ball of burning gas. Which element is the Sun MOSTLY made of?", opts: ["Hydrogen", "Gold", "Calcium"], ans: "Hydrogen",
+        say: "Hydrogen! The Sun squeezes hydrogen together to make light and heat — that is where sunshine comes from!" },
+      { q: "Water is made of hydrogen and one other element. Which one?", opts: ["Carbon", "Oxygen", "Helium"], ans: "Oxygen",
+        say: "Oxygen! Two hydrogens plus one oxygen — that is the recipe for water!" },
+      { q: "A pencil's gray middle and a sparkling diamond look nothing alike — but both are made of ONE element. Which?", opts: ["Nitrogen", "Carbon", "Oxygen"], ans: "Carbon",
+        say: "Carbon! Squished softly, carbon is pencil lead. Squished super hard underground, it becomes a diamond!" },
+      { q: "Which element makes your bones and teeth hard as stone?", opts: ["Helium", "Hydrogen", "Calcium"], ans: "Calcium",
+        say: "Calcium! Your skeleton is built from it — drink your milk and thank your calcium!" }
+    ];
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= rounds.length) return;
+      const q = rounds[r];
+      speak("Element quiz! " + q.q, true);
+      const note = document.createElement("p");
+      note.className = "visual-note";
+      note.textContent = "🧪 " + q.q;
+      area.appendChild(note);
+      cardRow(q.opts.map(w => ({ w, e: "⚗️" })), (c, b) => {
+        if (c.w === q.ans) {
+          b.classList.add("right");
+          fanfare();
+          r += 1;
+          if (r >= rounds.length) { speak(q.say + " Little chemist, you know your elements!"); setTimeout(nextStage, 2200); }
+          else { speak(q.say); setTimeout(render, 2100); }
+        } else {
+          b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+          speak("Good thinking, scientist! Scientists test ideas — try another one!");
+        }
+      });
+    }
+    render();
+  }
+
+  if (stage === 2) { // Molecule Maker — tap atoms, build real molecules
+    const builds = [
+      { need: { H: 2, O: 1 }, emoji: "💧", title: "H₂O — WATER!", fact: "Two hydrogens and one oxygen, holding hands, make WATER! It is the most important molecule for life — and YOU are mostly made of it!" },
+      { need: { O: 2 }, emoji: "💨", title: "O₂ — BREATHING OXYGEN!", fact: "Two oxygens holding hands make the oxygen you breathe! Scientists write it O-2!" },
+      { need: { C: 1, O: 2 }, emoji: "🌿", title: "CO₂ — PLANT FOOD!", fact: "One carbon and two oxygens make carbon dioxide — what YOU breathe OUT, and what plants breathe IN to grow. You and the trees are partners!" }
+    ];
+    let bi = 0;
+    function render() {
+      area.innerHTML = "";
+      if (bi >= builds.length) return;
+      const bd = builds[bi];
+      const got = {};
+      Object.keys(bd.need).forEach(k => { got[k] = 0; });
+      speak("Molecule Maker! Molecules are atoms holding hands. Build " + bd.title.split(" — ")[0] + ": tap the atoms you need!", true);
+      const display = document.createElement("div");
+      display.className = "code-row";
+      display.textContent = "🧪 Atoms so far: none yet!";
+      area.appendChild(display);
+      const needLine = document.createElement("p");
+      needLine.className = "fact-line";
+      needLine.textContent = "Recipe: " + Object.keys(bd.need).map(k => bd.need[k] + " × " + bySym[k].name).join("  +  ");
+      area.appendChild(needLine);
+      const row = document.createElement("div");
+      row.className = "shape-grid";
+      Object.keys(bd.need).forEach(sym => {
+        row.appendChild(tile(bySym[sym], (el, btn) => {
+          if (got[sym] >= bd.need[sym]) { speak("You have all the " + el.name + " this molecule needs!"); return; }
+          got[sym] += 1;
+          chime(2 + got[sym]);
+          const parts = [];
+          Object.keys(got).forEach(k => { for (let i = 0; i < got[k]; i++) parts.push(k); });
+          display.textContent = "🧪 Atoms so far: " + parts.join(" · ");
+          const done = Object.keys(bd.need).every(k => got[k] >= bd.need[k]);
+          if (done) {
+            fanfare();
+            display.textContent = bd.emoji + " " + bd.title;
+            speak(bd.fact);
+            bi += 1;
+            setTimeout(() => { if (bi >= builds.length) nextStage(); else render(); }, 2800);
+          } else speak(el.name + "! " + parts.length + " atom" + (parts.length > 1 ? "s" : "") + " holding hands so far!");
+        }));
+      });
+      area.appendChild(row);
     }
     render();
   }
@@ -4438,6 +4627,8 @@ function renderPlayerUI() {
   renderNameLetters();
   const title = $("gameTitle");
   if (title) title.textContent = playerId === "klaus" ? "Klausaiyan" : "Sophia";
+  const top = $("topTitle");
+  if (top) top.textContent = playerId === "klaus" ? "✦ Klausaiyan ✦" : "✦ Sophia ✦";
   const g = $("playerGreeting");
   if (g) g.textContent = playerId === "klaus"
     ? "Klaus's garden: advanced missions — Rocket Math, Geometry Lab, Star Scientist, DJ Studio PRO!"
@@ -4491,6 +4682,7 @@ wire("worldAnimals", () => startLevel("animals"));
 wire("worldTales", () => startLevel("tales"));
 wire("worldSacred", () => startLevel("sacred"));
 wire("worldPlay", () => startLevel("play"));
+wire("worldElements", () => startLevel("elements"));
 wire("worldDiscover", () => openDiscover());
 wire("discoverBack", () => { renderMap(); show("screenMap"); });
 wire("homeBtn", () => {
