@@ -44,8 +44,23 @@ const LEVELS = {
   wizard: { title: "Word Wizard Academy", stages: 4, gem: "🧙", celebrateEmoji: "🧙",
     celebrateText: "Ember says: Rhymes, building whole sentences, main ideas, and big vocabulary words — Word Wizard, level up!" },
   stars: { title: "Star Scientist", stages: 4, gem: "🌌", celebrateEmoji: "🔭",
-    celebrateText: "Ember says: Planet order, moon phases, light-years, nebulas, and black holes — you are a true Star Scientist!" }
+    celebrateText: "Ember says: Planet order, moon phases, light-years, nebulas, and black holes — you are a true Star Scientist!" },
+  zen: { title: "Mindfulness Journey", stages: 4, gem: "🪷", celebrateEmoji: "🪷",
+    celebrateText: "Ember says: You breathed like a dragon, named your feelings, chose kindness, and sent wishes of love to the whole world!" },
+  animals: { title: "Animal Kingdom", stages: 4, gem: "🦁", celebrateEmoji: "🦁",
+    celebrateText: "Ember says: Habitats, animal families, riddles, and baby animal names — you are a true friend of animals!" },
+  tales: { title: "Ember's Story Tales", stages: 2, gem: "📖", celebrateEmoji: "📖",
+    celebrateText: "Ember says: Two whole stories, lived by YOU! Stories teach our hearts to be brave, patient, and kind!" }
 };
+
+// Love notes: every celebration ends by reminding them they are loved.
+const LOVE_NOTES = [
+  "And remember: you are loved exactly as you are — always. 💛",
+  "You are loved bigger than the whole sky. 🌌",
+  "Nothing could ever make you more loved. You already are, completely. 💛",
+  "You are loved on your best days AND your hard days. Always. 🌈",
+  "Ember loves you, your family loves you, and this garden loves you. 💛"
+];
 
 // Show-and-tell missions: something to go teach/show another human after each world.
 const TELLS = {
@@ -66,7 +81,10 @@ const TELLS = {
   geo: "🌟 Show & Tell Mission: tell someone, “A square has FOUR lines of symmetry — and perimeter means adding ALL the sides!”",
   rocket: "🌟 Show & Tell Mission: ask someone, “What is 3 times 4?” then explain it's 3 groups of 4!",
   wizard: "🌟 Show & Tell Mission: teach someone a big word — tell them what ENORMOUS means!",
-  stars: "🌟 Show & Tell Mission: tell someone, “Sunlight takes 8 minutes to reach us — and a light-year is a DISTANCE!”"
+  stars: "🌟 Show & Tell Mission: tell someone, “Sunlight takes 8 minutes to reach us — and a light-year is a DISTANCE!”",
+  zen: "🌟 Show & Tell Mission: teach someone the dragon breath — breathe in slowly, breathe out even slower — then tell them one kind wish!",
+  animals: "🌟 Show & Tell Mission: tell someone, “A group of wolves is called a PACK — and elephants talk in rumbles too low to hear!”",
+  tales: "🌟 Show & Tell Mission: retell Ember's story in your own words — and tell someone the lesson at its heart!"
 };
 
 const WORLD_KEYS = ["circle", "hex", "planet", "triangle", "square", "spiral"];
@@ -77,7 +95,7 @@ function allWorldsDone() { return WORLD_KEYS.every(k => gems[k]); }
 // ever overwrites the other's gems or discoveries.
 const PLAYERS = {
   klaus: { id: "klaus", short: "Klaus", hero: "Klausaiyan", emoji: "🦖" },
-  sophia: { id: "sophia", short: "Sophia", hero: "Sophia", emoji: "🐴" }
+  sophia: { id: "sophia", short: "Sophia", hero: "Princess Sophia", emoji: "👑" }
 };
 let playerId = "klaus";
 try { playerId = localStorage.getItem("klausaiyanPlayer") || "klaus"; } catch (e) {}
@@ -121,6 +139,40 @@ function tone(freq, delay = 0, dur = 0.35) {
 function chime(step = 0) { tone(SCALE[Math.max(0, Math.min(step, SCALE.length - 1))]); }
 function fanfare() { [0, 2, 4, 7].forEach((n, i) => tone(SCALE[n], i * 0.13, 0.5)); }
 
+// ===== The prettiest voice the device has =====
+// The browser picks its plain default voice unless we choose — so we hunt
+// through the installed voices for a warm, natural one (the same nice voices
+// the device uses for audiobooks), and fall back gracefully if none exist.
+let prettyVoice = null;
+function pickPrettyVoice() {
+  try {
+    const voices = speechSynthesis.getVoices();
+    if (!voices || !voices.length) return;
+    const favorites = [
+      "Google US English",           // Chrome / Android — smooth and natural
+      "Microsoft Aria",              // Edge neural voices
+      "Microsoft Jenny",
+      "Microsoft Zira",
+      "Samantha",                    // Apple devices
+      "Karen", "Moira", "Tessa",     // Apple English variants
+      "Google English"
+    ];
+    for (const fav of favorites) {
+      const v = voices.find(v => v.name && v.name.includes(fav));
+      if (v) { prettyVoice = v; return; }
+    }
+    // Otherwise: prefer a US English voice, then any English voice.
+    prettyVoice =
+      voices.find(v => /^en[-_]US/i.test(v.lang || "")) ||
+      voices.find(v => /^en/i.test(v.lang || "")) ||
+      prettyVoice;
+  } catch (e) {}
+}
+try {
+  pickPrettyVoice();
+  if (window.speechSynthesis) speechSynthesis.onvoiceschanged = pickPrettyVoice;
+} catch (e) {}
+
 function speak(text, isInstruction = false) {
   if (isInstruction) {
     lastInstruction = text;
@@ -134,11 +186,20 @@ function speak(text, isInstruction = false) {
       .replace(/Klausaiyan/g, "Klouse Say-yen")
       .replace(/\bdinos\b/gi, "dye-nose")
       .replace(/\bdino\b/gi, "dye-no");
-    const u = new SpeechSynthesisUtterance(spoken);
-    u.rate = 0.95;
-    u.pitch = 1.12;
     speechSynthesis.cancel();
-    speechSynthesis.speak(u);
+    // Speak sentence by sentence: natural little pauses between sentences make
+    // the voice sound like storytelling instead of one long robot run-on, and
+    // short chunks never get cut off the way very long utterances can be.
+    const chunks = spoken.match(/[^.!?…]+[.!?…]*["”']?\s*/g) || [spoken];
+    chunks.map(s => s.trim()).filter(Boolean).forEach(part => {
+      const u = new SpeechSynthesisUtterance(part);
+      if (prettyVoice) u.voice = prettyVoice;
+      u.rate = 0.94;   // a touch slower — warm and easy to follow
+      // Google voices sound best near their natural pitch; others get a
+      // gentle lift so they sound friendly rather than flat.
+      u.pitch = prettyVoice && /google/i.test(prettyVoice.name) ? 1.0 : 1.06;
+      speechSynthesis.speak(u);
+    });
   } catch (e) {}
 }
 
@@ -179,6 +240,9 @@ function renderMap() {
   tg("worldRocket", "done", !!gems.rocket);
   tg("worldWizard", "done", !!gems.wizard);
   tg("worldStars", "done", !!gems.stars);
+  tg("worldZen", "done", !!gems.zen);
+  tg("worldAnimals", "done", !!gems.animals);
+  tg("worldTales", "done", !!gems.tales);
   const fl = $("factLine");
   if (fl) fl.textContent = discoveredFacts.size > 0
     ? `⭐ Facts discovered: ${discoveredFacts.size} of ${DISCOVER.length} — keep exploring!`
@@ -219,7 +283,8 @@ function renderStage() {
     triangle: triangleStage, square: squareStage, spiral: spiralStage, flower: flowerStage,
     match: matchStage, frog: frogStage, dj: djStage, keys: keysStage,
     math: mathStage, read: readStage, sophia: sophiaStage, geo: geoStage,
-    rocket: rocketStage, wizard: wizardStage, stars: starsStage }[key];
+    rocket: rocketStage, wizard: wizardStage, stars: starsStage,
+    zen: zenStage, animals: animalsStage, tales: talesStage }[key];
   try { fn(stage); }
   catch (e) { $("stageMsg").textContent = "Oh no — this world got tangled! Tell Mommy to refresh the page!"; }
   stageAdvancing = false;
@@ -244,6 +309,9 @@ function completeLevel() {
   $("celebrateEmoji").textContent = LEVELS[key].celebrateEmoji;
   $("celebrateTitle").textContent = "You did it, " + player().hero + "!";
   $("celebrateText").textContent = LEVELS[key].celebrateText;
+  const love = LOVE_NOTES[Object.keys(gems).length % LOVE_NOTES.length];
+  const loveEl = $("celebrateLove");
+  if (loveEl) loveEl.textContent = love;
   $("celebrateTell").textContent = TELLS[key] || "";
   $("celebrate").classList.remove("hidden");
   for (let i = 0; i < 14; i++) {
@@ -255,7 +323,7 @@ function completeLevel() {
     $("celebrate").appendChild(s);
     setTimeout(() => s.remove(), 1300);
   }
-  speak("You did it, " + player().hero + "! " + LEVELS[key].celebrateText);
+  speak("You did it, " + player().hero + "! " + LEVELS[key].celebrateText + " " + love);
   current = null;
 }
 
@@ -1110,7 +1178,21 @@ const DISCOVER = [
   { e: "\uD83C\uDF0C", n: "Milky Way", facts: ["Our galaxy is called the Milky Way!", "The Milky Way is a giant SPIRAL of stars!", "There are more stars in space than grains of sand on all the beaches!"] },
   { e: "\u2604\uFE0F", n: "Comet", facts: ["Comets are giant dirty snowballs in space!", "A comet's tail always points AWAY from the Sun!", "Halley's Comet comes back to visit every 76 years!"] },
   { e: "\uD83D\uDEF0\uFE0F", n: "Space Station", facts: ["Astronauts LIVE on the International Space Station!", "The Space Station flies around Earth in only 90 minutes!", "From the Space Station, astronauts see 16 sunrises every day!"] },
-  { e: "\uD83E\uDDD1\u200D\uD83D\uDE80", n: "Astronaut", facts: ["Astronauts float in space \u2014 there is no up or down!", "NASA is training astronauts to go back to the Moon!", "A footprint on the Moon can stay there for millions of years!"] }
+  { e: "\uD83E\uDDD1\u200D\uD83D\uDE80", n: "Astronaut", facts: ["Astronauts float in space \u2014 there is no up or down!", "NASA is training astronauts to go back to the Moon!", "A footprint on the Moon can stay there for millions of years!"] },
+  { e: "\u26AA", n: "Mercury", facts: ["Mercury is the CLOSEST planet to the Sun!", "A year on Mercury is only 88 days long!", "Mercury is covered in craters, like the Moon!"] },
+  { e: "\uD83D\uDFE1", n: "Venus", facts: ["Venus is the HOTTEST planet \u2014 its thick clouds trap the heat!", "Venus spins BACKWARDS compared to most planets!", "Venus is the brightest planet in our sky \u2014 the Morning Star!"] },
+  { e: "\uD83C\uDF0D", n: "Earth", facts: ["Earth is the only planet with life that we know of!", "Most of Earth is covered in water \u2014 that's why it looks blue!", "Earth is our home. Taking care of it is a hero's job!"] },
+  { e: "\uD83D\uDD34", n: "Mars", facts: ["Mars is red because its dust is rusty, like old iron!", "Mars has the tallest volcano in the solar system!", "Real robot rovers are driving on Mars RIGHT NOW!"] },
+  { e: "\uD83D\uDFE0", n: "Jupiter", facts: ["Jupiter is the BIGGEST planet \u2014 more than a thousand Earths could fit inside!", "Jupiter's Great Red Spot is a storm bigger than Earth!", "Jupiter has more than 90 moons!"] },
+  { e: "\uD83C\uDF0A", n: "Neptune", facts: ["Neptune is the FARTHEST planet from the Sun!", "Neptune has the fastest winds anywhere \u2014 faster than a hurricane!", "Neptune is a deep, beautiful blue!"] },
+  { e: "\uD83D\uDC18", n: "Elephant", facts: ["Elephants are the biggest animals that live on land!", "Elephants talk in rumbles so deep and low that we can barely hear them!", "An elephant's trunk can pick up a single tiny leaf!"] },
+  { e: "\uD83E\uDD89", n: "Owl", facts: ["An owl can turn its head almost ALL the way around!", "Owls fly almost silently \u2014 their feathers are soft as whispers!", "An owl's eyes cannot move, so its whole head turns instead!"] },
+  { e: "\uD83D\uDC19", n: "Octopus", facts: ["An octopus has THREE hearts!", "An octopus has BLUE blood!", "An octopus can change color to hide \u2014 and squeeze through tiny holes!"] },
+  { e: "\uD83D\uDC27", n: "Penguin", facts: ["Penguins are birds that swim instead of fly!", "Emperor penguin DADS keep the egg warm on their feet all winter!", "Penguins love to slide on their bellies \u2014 it's called tobogganing!"] },
+  { e: "\uD83D\uDC0B", n: "Whale", facts: ["The blue whale is the biggest animal that has EVER lived \u2014 bigger than any dinosaur!", "Whales sing songs that can travel for miles under the sea!", "Whales breathe air, just like you \u2014 they must come up to take a breath!"] },
+  { e: "\uD83E\uDD8B", n: "Butterfly", facts: ["A butterfly tastes with its FEET!", "Every butterfly begins life as a tiny caterpillar!", "A butterfly's wings are covered in tiny, tiny scales!"] },
+  { e: "\uD83D\uDC22", n: "Turtle", facts: ["Some turtles live for more than 100 years!", "Sea turtles find their way across whole oceans and return to the beach where they were born!", "A turtle's shell is part of its skeleton \u2014 it can feel when you touch it!"] },
+  { e: "\uD83D\uDC3C", n: "Panda", facts: ["Pandas spend almost all day eating bamboo!", "A newborn panda is tiny \u2014 about the size of a stick of butter!", "Pandas have a special thumb just for holding bamboo!"] }
 ];
 
 function loadFacts() {
@@ -3281,28 +3363,466 @@ function starsStage(stage) {
 }
 
 
+// ===== MINDFULNESS JOURNEY (breath, feelings, kindness, loving wishes) =====
+// Rooted in what the family loves: Buddhist loving-kindness and compassion,
+// and the Taoist way of flowing like water — soft, patient, and strong.
+function zenStage(stage) {
+  const area = $("stageArea");
+
+  function cardRow(cards, onPick) {
+    const wrap = document.createElement("div");
+    wrap.className = "word-cards";
+    cards.forEach(c => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "word-card";
+      b.innerHTML = `<span class="wc-emoji">${c.e || "✨"}</span><span class="wc-word sm">${c.w}</span>`;
+      b.addEventListener("click", () => onPick(c, b));
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+  }
+
+  if (stage === 0) { // Dragon breath — guided breathing with Ember
+    speak("Mindfulness Journey. First: the Dragon Breath. Watch Ember's circle. When it GROWS, breathe in slowly. When it SHRINKS, breathe out even slower.", true);
+    const circle = document.createElement("div");
+    circle.className = "breath-circle";
+    circle.textContent = "🐉";
+    area.appendChild(circle);
+    const cue = document.createElement("p");
+    cue.className = "stage-msg";
+    area.appendChild(cue);
+    let breaths = 0;
+    function cycle() {
+      if (!circle.isConnected) return; // left the stage — stop quietly
+      cue.textContent = "Breathe in… 🌸";
+      speak("Breathe in, slowly…");
+      circle.style.transform = "scale(1.45)";
+      setTimeout(() => {
+        if (!circle.isConnected) return;
+        cue.textContent = "Breathe out… 🍃";
+        speak("And breathe out, even slower…");
+        circle.style.transform = "scale(1)";
+        setTimeout(() => {
+          if (!circle.isConnected) return;
+          breaths += 1;
+          if (breaths < 3) cycle();
+          else {
+            cue.textContent = "Three dragon breaths. Feel how calm your body is? 🌈";
+            speak("Three dragon breaths. Your body is calm, and your heart is quiet. Beautiful.");
+          }
+        }, 4200);
+      }, 4200);
+    }
+    setTimeout(cycle, 600);
+    const calm = document.createElement("button");
+    calm.type = "button";
+    calm.className = "cmd-btn cmd-go";
+    calm.textContent = "🌿 I Feel Calm";
+    calm.addEventListener("click", () => { fanfare(); speak("Calm and strong, like a mountain lake."); setTimeout(nextStage, 1200); });
+    area.appendChild(calm);
+  }
+
+  if (stage === 1) { // Name the feeling — emotional intelligence
+    const rounds = [
+      { e: "😢", scene: "Ember's ice-cream fell on the ground. How does Ember feel?", opts: ["Sad", "Excited", "Proud"], ans: "Sad",
+        teach: "Sad. Sad is okay — feelings are like clouds. They visit, and they float away. A hug or a kind word helps." },
+      { e: "😊", scene: "Ember's friend shared their favorite toy. How does Ember feel?", opts: ["Angry", "Happy", "Sleepy"], ans: "Happy",
+        teach: "Happy! When something feels good inside, we can say it out loud: “I feel happy!”" },
+      { e: "😤", scene: "Ember's block tower fell down — three times! How does Ember feel?", opts: ["Frustrated", "Silly", "Calm"], ans: "Frustrated",
+        teach: "Frustrated! That's the feeling when something is hard. A dragon breath helps. Then we can try again." },
+      { e: "😨", scene: "Boom! A big thunder sound outside. How does Ember feel?", opts: ["Bored", "Scared", "Hungry"], ans: "Scared",
+        teach: "Scared. When we feel scared, we find a grown-up we love. Being scared is never something to hide." }
+    ];
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= rounds.length) return;
+      const q = rounds[r];
+      speak("Feelings detective! " + q.scene, true);
+      const big = document.createElement("div");
+      big.className = "big-number";
+      big.textContent = q.e;
+      area.appendChild(big);
+      const note = document.createElement("p");
+      note.className = "visual-note";
+      note.textContent = q.scene;
+      area.appendChild(note);
+      cardRow(q.opts.map(w => ({ w })), (c, b) => {
+        if (c.w === q.ans) {
+          b.classList.add("right");
+          fanfare();
+          r += 1;
+          if (r >= rounds.length) { speak(q.teach + " You can name feelings — that's a superpower!"); setTimeout(nextStage, 2100); }
+          else { speak(q.teach); setTimeout(render, 2000); }
+        } else {
+          b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+          speak("Look at Ember's face again. What is it telling you?");
+        }
+      });
+    }
+    render();
+  }
+
+  if (stage === 2) { // Choose kindness — compassion in action
+    const rounds = [
+      { scene: "Your friend is crying at the park. What could you do?", kind: "Sit with them and listen 💛", other: "Laugh at them",
+        reframe: "Hmm — laughing might make the sad feeling even bigger. Kindness makes it smaller. Try another choice!" },
+      { scene: "A new kid doesn't know how to play your game. What could you do?", kind: "Teach them how to play 🎲", other: "Keep it a secret",
+        reframe: "Keeping secrets about games leaves friends out. Teaching someone makes TWO people happy. Try another choice!" },
+      { scene: "You find a tiny hurt bird on the path. What could you do?", kind: "Get a grown-up to help 🐦", other: "Chase it",
+        reframe: "Chasing would frighten the little bird. Gentle helpers get a grown-up. Try another choice!" },
+      { scene: "You have two cookies. Your sister has none. What could you do?", kind: "Share one with her 🍪", other: "Eat both very fast",
+        reframe: "Ha! Fast cookie eating! But sharing tastes even sweeter — and it fills TWO hearts. Try another choice!" }
+    ];
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= rounds.length) return;
+      const q = rounds[r];
+      speak("Kindness choice! " + q.scene, true);
+      const note = document.createElement("p");
+      note.className = "visual-note";
+      note.textContent = q.scene;
+      area.appendChild(note);
+      const order = r % 2 === 0 ? [q.kind, q.other] : [q.other, q.kind];
+      cardRow(order.map(w => ({ w, e: w === q.kind ? "💛" : "🤔" })), (c, b) => {
+        if (c.w === q.kind) {
+          b.classList.add("right");
+          fanfare();
+          r += 1;
+          if (r >= rounds.length) { speak("Kindness every time! A kind heart is the strongest thing in the whole garden!"); setTimeout(nextStage, 1900); }
+          else { speak("Kindness! That choice makes the world softer."); setTimeout(render, 1600); }
+        } else {
+          b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+          speak(q.reframe);
+        }
+      });
+    }
+    render();
+  }
+
+  if (stage === 3) { // Loving-kindness wishes + the love reminder
+    speak("Now: loving-kindness wishes. Tap each lantern to send a kind wish out into the world!", true);
+    const wishes = [
+      { e: "🪷", wish: "May *I* be happy. May I be calm and safe." },
+      { e: "🏮", wish: "May my family be happy. May they be calm and safe." },
+      { e: "💛", wish: "May my friends be happy. May they be calm and safe." },
+      { e: "🐘", wish: "May all the animals be happy. May they be calm and safe." },
+      { e: "🌍", wish: "May everyone, everywhere, be happy. May they be calm and safe." }
+    ];
+    let sent = 0;
+    const count = document.createElement("p");
+    count.className = "fact-line";
+    count.textContent = "⭐ Wishes sent: 0 of " + wishes.length;
+    area.appendChild(count);
+    const row = document.createElement("div");
+    row.className = "shape-grid";
+    wishes.forEach(w => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "group-btn wish-btn";
+      b.innerHTML = `<span style="font-size:2.4em">${w.e}</span>`;
+      b.addEventListener("click", () => {
+        if (b.disabled) return;
+        b.disabled = true;
+        b.classList.add("found");
+        sent += 1;
+        count.textContent = "⭐ Wishes sent: " + sent + " of " + wishes.length;
+        fanfare();
+        if (sent >= wishes.length) {
+          speak(w.wish + " And now the most important wish of all, from Ember: " + player().hero + ", you are LOVED. Exactly as you are. Today, tomorrow, always.");
+          setTimeout(nextStage, 2600);
+        } else speak(w.wish);
+      });
+      row.appendChild(b);
+    });
+    area.appendChild(row);
+  }
+}
+
+
+// ===== ANIMAL KINGDOM (habitats, groups, riddles, babies) =====
+function animalsStage(stage) {
+  const area = $("stageArea");
+
+  function cardRow(cards, onPick) {
+    const wrap = document.createElement("div");
+    wrap.className = "word-cards";
+    cards.forEach(c => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "word-card";
+      b.innerHTML = `<span class="wc-emoji">${c.e || "✨"}</span><span class="wc-word sm">${c.w}</span>`;
+      b.addEventListener("click", () => onPick(c, b));
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+  }
+  function ask(text) {
+    speak(text, true);
+    const note = document.createElement("p");
+    note.className = "visual-note";
+    note.textContent = text;
+    area.appendChild(note);
+  }
+  function quiz(rounds) {
+    let r = 0;
+    function render() {
+      area.innerHTML = "";
+      if (r >= rounds.length) return;
+      const q = rounds[r];
+      ask(q.q);
+      if (q.big) { const big = document.createElement("div"); big.className = "big-number"; big.textContent = q.big; area.appendChild(big); }
+      cardRow(q.opts, (c, b) => {
+        if (c.w === q.ans) {
+          b.classList.add("right");
+          fanfare();
+          r += 1;
+          if (r >= rounds.length) { speak(q.fact + " Animal expert!"); setTimeout(nextStage, 1900); }
+          else { speak(q.fact); setTimeout(render, 1700); }
+        } else {
+          b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+          speak(q.hint || "Think like the animal! Where would IT want to live?");
+        }
+      });
+    }
+    render();
+  }
+
+  if (stage === 0) { // Habitats — where do they live?
+    quiz([
+      { q: "Where does a PENGUIN live?", big: "🐧", opts: [{ w: "Icy Antarctica", e: "🧊" }, { w: "Hot desert", e: "🏜️" }, { w: "Jungle trees", e: "🌴" }], ans: "Icy Antarctica", fact: "Penguins live where it's icy — their feathers are waterproof wetsuits!", hint: "Penguins love to swim in chilly water!" },
+      { q: "Where does a CAMEL live?", big: "🐪", opts: [{ w: "The ocean", e: "🌊" }, { w: "Hot desert", e: "🏜️" }, { w: "Snowy mountains", e: "🏔️" }], ans: "Hot desert", fact: "Camels store fat in their humps and can go for weeks without water!", hint: "Camels are called ships of the DESERT!" },
+      { q: "Where does a FROG live?", big: "🐸", opts: [{ w: "A pond", e: "💧" }, { w: "The desert", e: "🏜️" }, { w: "Outer space", e: "🚀" }], ans: "A pond", fact: "Frogs live near ponds — they begin life as tadpoles swimming in the water!", hint: "You coded a frog at the coding pond, remember?" },
+      { q: "Where does a POLAR BEAR live?", big: "🐻‍❄️", opts: [{ w: "The sunny beach", e: "🏖️" }, { w: "The forest", e: "🌲" }, { w: "The icy Arctic", e: "❄️" }], ans: "The icy Arctic", fact: "Polar bears have see-through fur that only LOOKS white — and black skin underneath!", hint: "Brrr! Think of the coldest place on Earth!" }
+    ]);
+  }
+
+  if (stage === 1) { // Animal groups — real collective nouns
+    quiz([
+      { q: "A group of WOLVES is called a…?", big: "🐺", opts: [{ w: "Pack" }, { w: "Flock" }, { w: "Herd" }], ans: "Pack", fact: "A PACK! Wolves hunt, play, and howl together as a family!", hint: "It rhymes with BACK!" },
+      { q: "A group of ELEPHANTS is called a…?", big: "🐘", opts: [{ w: "School" }, { w: "Herd" }, { w: "Pack" }], ans: "Herd", fact: "A HERD! The oldest grandmother elephant leads and remembers where the water is!", hint: "Cows travel in one of these too!" },
+      { q: "A group of FISH is called a…?", big: "🐟", opts: [{ w: "Flock" }, { w: "Pride" }, { w: "School" }], ans: "School", fact: "A SCHOOL of fish! They swirl together like one giant silver ribbon!", hint: "It's where YOU go to learn — fish go too!" },
+      { q: "A group of LIONS is called a…?", big: "🦁", opts: [{ w: "Pride" }, { w: "Herd" }, { w: "Swarm" }], ans: "Pride", fact: "A PRIDE of lions! The lionesses do most of the hunting, together!", hint: "It also means feeling good about something you did well!" }
+    ]);
+  }
+
+  if (stage === 2) { // Who am I? — animal riddles
+    quiz([
+      { q: "Who am I? I am the biggest land animal. I spray water with my long trunk, and my ears look like the shape of Africa!", opts: [{ w: "Elephant", e: "🐘" }, { w: "Hippo", e: "🦛" }, { w: "Horse", e: "🐴" }], ans: "Elephant", fact: "The ELEPHANT! Elephants comfort each other when they're sad — just like people.", hint: "Think of the animal with the trunk!" },
+      { q: "Who am I? I sleep hanging upside down all day, and at night I fly using echoes to find my way!", opts: [{ w: "Owl", e: "🦉" }, { w: "Bat", e: "🦇" }, { w: "Bee", e: "🐝" }], ans: "Bat", fact: "The BAT — the only mammal that truly flies! Its ears 'see' with sound: echolocation!", hint: "This animal's ears do the seeing!" },
+      { q: "Who am I? I have three hearts, blue blood, and I can change color to hide!", opts: [{ w: "Octopus", e: "🐙" }, { w: "Frog", e: "🐸" }, { w: "Penguin", e: "🐧" }], ans: "Octopus", fact: "The OCTOPUS! One of the smartest animals in the whole ocean!", hint: "Count its arms — there are eight!" },
+      { q: "Who am I? I carry my home on my back, I move very slowly, and I might live to be 100 years old!", opts: [{ w: "Snail", e: "🐌" }, { w: "Turtle", e: "🐢" }, { w: "Crab", e: "🦀" }], ans: "Turtle", fact: "The TURTLE! Slow, patient, and strong — the Tao says the slow way can be the wise way.", hint: "Its home is a shell it never leaves!" }
+    ]);
+  }
+
+  if (stage === 3) { // Baby animal names
+    quiz([
+      { q: "A baby BEAR is called a…?", big: "🐻", opts: [{ w: "Cub" }, { w: "Calf" }, { w: "Pup" }], ans: "Cub", fact: "A CUB! Bear babies, lion babies, and tiger babies are all called cubs!", hint: "It starts with C and rhymes with TUB!" },
+      { q: "A baby COW is called a…?", big: "🐮", opts: [{ w: "Chick" }, { w: "Calf" }, { w: "Kit" }], ans: "Calf", fact: "A CALF! Elephant babies and whale babies are called calves too!", hint: "Elephants and whales share this baby name!" },
+      { q: "A baby CHICKEN is called a…?", big: "🐔", opts: [{ w: "Chick" }, { w: "Cub" }, { w: "Fawn" }], ans: "Chick", fact: "A CHICK! Soft, yellow, and peeping — peep peep!", hint: "Listen: what sound does it make? Peep!" },
+      { q: "A baby DEER is called a…?", big: "🦌", opts: [{ w: "Pup" }, { w: "Fawn" }, { w: "Joey" }], ans: "Fawn", fact: "A FAWN! And a baby kangaroo is a joey — it rides in its mother's pouch!", hint: "It has spots and wobbly legs!" }
+    ]);
+  }
+}
+
+
+// ===== EMBER'S STORY TALES (original interactive stories) =====
+function talesStage(stage) {
+  const area = $("stageArea");
+
+  const STORIES = [
+    {
+      title: "The Little Star Who Was Afraid of the Dark",
+      scenes: [
+        { e: "⭐", text: "High above the garden lived Pip, a little star. Every morning, Pip shone happily. But every EVENING, when the sky grew dark… Pip trembled. “The dark is too big,” Pip whispered. “And I am so small.”",
+          choices: [
+            { label: "Hide behind a cloud ☁️", response: "Pip hid behind a soft cloud. “I can't see the dark from here,” Pip said. But the cloud was not a very good hiding place — a kind voice was already there…" },
+            { label: "Twinkle anyway ✨", response: "Pip squeezed both eyes shut and twinkled as hard as possible. “If I shine bright enough,” Pip thought, “maybe the dark will seem smaller…”" }
+          ] },
+        { e: "🌙", text: "“Little star,” said the Moon, in her silver voice, “why do you tremble?” “I'm afraid of the dark,” said Pip. The Moon smiled. “Oh, my dear. The dark is not your enemy. The dark is the blanket that lets you REST — and the stage that lets you SHINE.”",
+          choices: [
+            { label: "Ask the Moon to stay 🌙", response: "“Will you stay near me?” asked Pip. “Always,” said the Moon. “Look around — you have never once been alone in the dark.”" },
+            { label: "Look around the sky 👀", response: "Pip looked… and gasped. A million other stars were twinkling all around! “We were here the whole time,” they sang. “You were never alone in the dark.”" }
+          ] },
+        { e: "🦉", text: "Just then, wise old Owl floated past. “The dark brings the fireflies,” hooted Owl. “It brings dreams, and owls, and YOU. Nothing that shines can shine in the daytime, little star. This is YOUR time.”",
+          question: { q: "Why did Pip stop being afraid?", opts: ["Friends were near, and the dark let him shine", "The dark went away forever", "Pip became the Sun"], ans: 0,
+            teach: "That's right — friends were near, and Pip learned the dark is where stars get to shine." } },
+        { e: "🌌", text: "So Pip took a deep breath — a dragon breath! — and twinkled. First one ray… then two… then ALL of them! And far below, in a garden, two children pointed up and said, “Look! That star is shining just for us!” The End. 💛 Moral: Sometimes the thing that scares us is exactly where we get to shine — and we are never, ever alone." }
+      ]
+    },
+    {
+      title: "The Seed Who Wanted to Hurry",
+      scenes: [
+        { e: "🌱", text: "Under the garden soil lived a tiny seed named Suki. Above the soil, flowers were blooming and bees were buzzing, and Suki called out, “HEY! I want to be a flower TODAY! Not tomorrow — TODAY!” So Suki pushed… and pushed… and pushed…",
+          choices: [
+            { label: "Push even harder! 💪", response: "Suki pushed until — pop! — a tiny root popped out the wrong way, upside down! “Oops,” said Suki. “Growing is harder than I thought.”" },
+            { label: "Shout at the rain ☔", response: "“RAIN! Hurry up! SUN! Shine harder!” Suki shouted. But the rain fell when it fell, and the sun shone when it shone. They did not hurry for anyone." }
+          ] },
+        { e: "🌊", text: "A drop of river water trickled past. “Little seed,” bubbled the river, “I never hurry, and I travel the WHOLE world. Flowing is stronger than forcing. Rest. Drink. Your season is coming.” So Suki rested. Suki drank. Suki waited — through warm days and cool, quiet nights.",
+          choices: [
+            { label: "Rest and drink 💧", response: "Day by day, Suki softened. Day by day, Suki swelled. Something wonderful was happening inside, slowly, silently, in the dark — the way all important growing happens." },
+            { label: "Peek at the flowers 🌼", response: "Through a crack in the soil, Suki peeked at the tall flowers. “Your turn is coming,” they whispered. “Every flower you see was once a seed that waited.”" }
+          ] },
+        { e: "🐢", text: "“How long must I wait?” Suki asked old Turtle, who was passing VERY slowly. Turtle smiled. “I have waited one hundred years for things,” he said, “and I have never once been late for my own life.”",
+          question: { q: "What did Suki the seed learn?", opts: ["Good things grow in their own time", "Pushing harder always works", "Seeds don't need water"], ans: 0,
+            teach: "Yes — good things grow in their own time. Flowing, like the river, is stronger than forcing." } },
+        { e: "🌻", text: "And then one golden morning — crack! — Suki's shell opened. Up, up, up through the soil stretched a green shoot… and by summer, Suki stood taller than anyone: a SUNFLOWER, with a face full of sunshine and spirals of seeds. “I didn't hurry,” Suki laughed. “I GREW.” The End. 💛 Moral: You don't have to hurry to become who you are. Growing takes exactly as long as growing takes — and you are right on time." }
+      ]
+    }
+  ];
+
+  const story = STORIES[stage];
+  let scene = 0;
+  speak("Story time! " + story.title + ". Listen, choose, and live the story!", true);
+  const title = document.createElement("p");
+  title.className = "stage-msg";
+  title.textContent = "📖 " + story.title;
+  area.appendChild(title);
+  const stageBox = document.createElement("div");
+  area.appendChild(stageBox);
+
+  function renderScene() {
+    stageBox.innerHTML = "";
+    const s = story.scenes[scene];
+    const em = document.createElement("div");
+    em.className = "big-number";
+    em.textContent = s.e;
+    stageBox.appendChild(em);
+    const card = document.createElement("div");
+    card.className = "story-card big-story";
+    card.textContent = s.text;
+    stageBox.appendChild(card);
+    const listen = document.createElement("button");
+    listen.type = "button";
+    listen.className = "cmd-btn";
+    listen.textContent = "🔊 Listen to the story";
+    listen.addEventListener("click", () => speak(s.text));
+    stageBox.appendChild(listen);
+    speak(s.text);
+
+    const controls = document.createElement("div");
+    controls.className = "cmd-row";
+    stageBox.appendChild(controls);
+
+    if (s.choices) {
+      s.choices.forEach(ch => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "cmd-btn";
+        b.textContent = ch.label;
+        b.addEventListener("click", () => {
+          controls.innerHTML = "";
+          const resp = document.createElement("div");
+          resp.className = "story-card big-story";
+          resp.textContent = ch.response;
+          stageBox.appendChild(resp);
+          speak(ch.response);
+          const cont = document.createElement("button");
+          cont.type = "button";
+          cont.className = "cmd-btn cmd-go";
+          cont.textContent = "Keep going ➡️";
+          cont.addEventListener("click", () => { scene += 1; renderScene(); });
+          controls.appendChild(cont);
+          stageBox.appendChild(controls);
+        });
+        controls.appendChild(b);
+      });
+    } else if (s.question) {
+      const q = s.question;
+      const qEl = document.createElement("p");
+      qEl.className = "stage-msg";
+      qEl.textContent = q.q;
+      stageBox.appendChild(qEl);
+      speak(q.q);
+      const wrap = document.createElement("div");
+      wrap.className = "word-cards";
+      q.opts.forEach((o, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "word-card";
+        b.innerHTML = `<span class="wc-word sm">${o}</span>`;
+        b.addEventListener("click", () => {
+          if (i === q.ans) {
+            b.classList.add("right");
+            fanfare();
+            speak(q.teach);
+            controls.innerHTML = "";
+            const cont = document.createElement("button");
+            cont.type = "button";
+            cont.className = "cmd-btn cmd-go";
+            cont.textContent = "Keep going ➡️";
+            cont.addEventListener("click", () => { scene += 1; renderScene(); });
+            controls.appendChild(cont);
+          } else {
+            b.classList.remove("wobble"); void b.offsetWidth; b.classList.add("wobble");
+            speak("Think about the story, story detective!");
+          }
+        });
+        wrap.appendChild(b);
+      });
+      stageBox.appendChild(wrap);
+    } else {
+      const fin = document.createElement("button");
+      fin.type = "button";
+      fin.className = "cmd-btn cmd-go";
+      fin.textContent = "💛 Finish the Story";
+      fin.addEventListener("click", () => { fanfare(); setTimeout(nextStage, 900); });
+      controls.appendChild(fin);
+    }
+  }
+  renderScene();
+}
+
+
 // ===== Wiring =====
-"KLAUSAIYAN".split("").forEach((letter, i) => {
-  const b = document.createElement("button");
-  b.type = "button";
-  b.className = "name-letter";
-  b.textContent = letter;
-  b.addEventListener("click", () => { chime(i % SCALE.length); speak("Letter " + letter + "!"); });
-  $("nameLetters").appendChild(b);
-});
+// The front page spells the CURRENT player's name in tappable letters —
+// KLAUSAIYAN for Klaus, SOPHIA for Princess Sophia. Tapping the letters in
+// order lights them up and earns a name fanfare.
+function renderNameLetters() {
+  const wrap = $("nameLetters");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  const name = playerId === "klaus" ? "KLAUSAIYAN" : "SOPHIA";
+  let expected = 0;
+  name.split("").forEach((letter, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "name-letter";
+    b.textContent = letter;
+    b.addEventListener("click", () => {
+      chime(i % SCALE.length);
+      if (i === expected) {
+        b.classList.add("lit");
+        expected += 1;
+        if (expected >= name.length) {
+          fanfare();
+          speak(name + "! That's YOUR name, " + player().hero + "! And you are so loved!");
+          expected = 0;
+          setTimeout(() => wrap.querySelectorAll(".name-letter").forEach(x => x.classList.remove("lit")), 2400);
+        } else speak("Letter " + letter + "!");
+      } else speak("Letter " + letter + "!");
+    });
+    wrap.appendChild(b);
+  });
+}
 
 // ===== Player profiles: tap a name on the title page to switch =====
 function renderPlayerUI() {
   tg("playerKlaus", "active", playerId === "klaus");
   tg("playerSophia", "active", playerId === "sophia");
+  renderNameLetters();
+  const title = $("gameTitle");
+  if (title) title.textContent = playerId === "klaus" ? "Klausaiyan" : "Sophia";
   const g = $("playerGreeting");
   if (g) g.textContent = playerId === "klaus"
     ? "Klaus's garden: advanced missions — Rocket Math, Geometry Lab, Star Scientist, DJ Studio PRO!"
-    : "Sophia's garden: Rainbow Meadow, horses, colors and counting — her gems save separately!";
+    : "Princess Sophia's garden: Rainbow Meadow, horses, colors and counting — her gems save separately!";
   const st = $("storyText");
   if (st) st.innerHTML = playerId === "klaus"
-    ? "Ember the dragon is waiting for you, Klausaiyan!<br>The garden flowers fell asleep. Only a shape hero can wake them up…"
-    : "Ember the dragon is waiting for you, Sophia!<br>The Rainbow Meadow is sleepy — the horses need your colors to wake it up…";
+    ? "Ember the dragon is waiting for you, Klausaiyan!<br>The garden flowers fell asleep. Only a shape hero can wake them up…<br>And remember — you are loved, exactly as you are. 💛"
+    : "Ember the dragon is waiting for you, Princess Sophia!<br>The Rainbow Meadow is sleepy — the horses need your colors to wake it up…<br>And remember — you are loved, exactly as you are. 💛";
 }
 function switchPlayer(id) {
   if (!PLAYERS[id] || id === playerId) { renderPlayerUI(); return; }
@@ -3343,6 +3863,9 @@ wire("worldGeo", () => startLevel("geo"));
 wire("worldRocket", () => startLevel("rocket"));
 wire("worldWizard", () => startLevel("wizard"));
 wire("worldStars", () => startLevel("stars"));
+wire("worldZen", () => startLevel("zen"));
+wire("worldAnimals", () => startLevel("animals"));
+wire("worldTales", () => startLevel("tales"));
 wire("worldDiscover", () => openDiscover());
 wire("discoverBack", () => { renderMap(); show("screenMap"); });
 wire("homeBtn", () => {
