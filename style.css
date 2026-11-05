@@ -1,3 +1,4 @@
+/* Klausaiyan and the Geometry Garden — styles, version 14 (Nov 5, 2026) */
 :root {
   --ink: #fff8ef;
   --gold: #ffd94d;
@@ -8,6 +9,9 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* Instant, eager taps for little fingers — no tap delay, no double-tap zoom */
+button { touch-action: manipulation; }
 
 html, body { margin: 0; min-height: 100%; }
 
