@@ -562,3 +562,14 @@ body::before {
   transition: transform 4s ease-in-out;
 }
 .wish-btn.found { border-color: var(--mint); box-shadow: 0 0 22px rgba(143, 240, 200, .55); }
+
+/* ===== Round 16: stage jump bar (skip back to an opened stage) ===== */
+.stage-jump { margin: 22px auto 6px; max-width: 640px; text-align: center; }
+.stage-jump-label { font-weight: 800; color: #ffd94d; margin-bottom: 10px; font-size: 1.05em; }
+.stage-jump-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.stage-jump-btn {
+  min-height: 56px; padding: 10px 16px; border-radius: 16px; cursor: pointer;
+  border: 3px solid rgba(255, 217, 77, .55); background: rgba(255, 255, 255, .10);
+  color: #fff; font-weight: 800; font-size: 1em; touch-action: manipulation;
+}
+.stage-jump-btn.here { background: rgba(255, 217, 77, .35); border-color: #ffd94d; }
