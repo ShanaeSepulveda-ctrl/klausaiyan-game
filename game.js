@@ -250,22 +250,45 @@ function fanfare() { [0, 2, 4, 7].forEach((n, i) => tone(SCALE[n], i * 0.13, 0.5
 // the device uses for audiobooks), and fall back gracefully if none exist.
 let prettyVoice = null;
 let bestLocalVoice = null;
+// The favorite shelf, best first. The British/Australian women live at the
+// top: Chrome's Google UK English Female (the voice Shanae calls the Mary
+// Poppins voice), Amazon's Polly voices Amy and Emma (British) and Nicole
+// (Australian) — the Fire tablet's own storyteller voices — then the other
+// platforms' warmest English women.
+const FAVORITE_VOICES = [
+  "Google UK English Female",    // warm British storyteller — the Mary Poppins end of the shelf
+  "Amy",                         // Amazon Polly en-GB female (Fire tablets)
+  "Emma",                        // Amazon Polly en-GB female (Fire tablets)
+  "Nicole",                      // Amazon Polly en-AU female (Fire tablets) — the Australian voice
+  "Microsoft Sonia",             // Edge en-GB neural — warm and clear
+  "Serena",                      // Apple en-GB female
+  "Karen",                       // Apple en-AU female
+  "Raveena",                     // Amazon Polly English female
+  "Google US English",           // Chrome / Android — bright and clear, Miss Rachel style
+  "Microsoft Aria",              // Edge neural voices
+  "Microsoft Jenny",
+  "Microsoft Zira",
+  "Samantha",                    // Apple devices
+  "Moira", "Tessa",              // Apple English variants
+  "Google English"
+];
+// A grown-up can also CHOOSE the voice on the title screen (the 🎙️ Voice
+// button cycles through this device's English voices with a spoken sample).
+// Their pick is saved on the device and always wins over the auto-pick.
+let savedVoiceId = null;
+try { savedVoiceId = localStorage.getItem("klausaiyanVoiceId") || null; } catch (e) {}
+function voiceIdOf(v) { return (v && (v.voiceURI || v.name)) || ""; }
+function updateVoiceBtn() {
+  try {
+    const b = $("voiceBtn");
+    if (b) b.textContent = "🎙️ Voice: " + (prettyVoice ? prettyVoice.name : "Device default") + " — tap to change";
+  } catch (e) {}
+}
 function pickPrettyVoice() {
   try {
     const voices = speechSynthesis.getVoices();
     if (!voices || !voices.length) return;
-    const favorites = [
-      "Google UK English Female",    // warm British storyteller — the Mary Poppins end of the shelf
-      "Microsoft Sonia",             // Edge en-GB neural — warm and clear
-      "Serena",                      // Apple en-GB female
-      "Google US English",           // Chrome / Android — bright and clear, Miss Rachel style
-      "Microsoft Aria",              // Edge neural voices
-      "Microsoft Jenny",
-      "Microsoft Zira",
-      "Samantha",                    // Apple devices
-      "Karen", "Moira", "Tessa",     // Apple English variants
-      "Google English"
-    ];
+    const favorites = FAVORITE_VOICES;
     // BELOVED VOICE FIRST (Round 16): Round 15 hunted favorites among
     // on-device (localService) voices first, because a streaming voice goes
     // silent when the tablet plays offline. It fixed the silence — but it
@@ -288,9 +311,39 @@ function pickPrettyVoice() {
              list.find(v => /^en/i.test(v.lang || "")) || null;
     };
     bestLocalVoice = hunt(voices.filter(v => v.localService));
-    prettyVoice = hunt(voices) || bestLocalVoice || prettyVoice;
+    const saved = savedVoiceId && voices.find(v => voiceIdOf(v) === savedVoiceId);
+    prettyVoice = saved || hunt(voices) || bestLocalVoice || prettyVoice;
     updateVoiceNote();
+    updateVoiceBtn();
   } catch (e) {}
+}
+
+// Every English voice on this device, favorites first, British and
+// Australian accents ahead of the rest — the list the 🎙️ button cycles.
+function voiceCandidates() {
+  try {
+    const voices = speechSynthesis.getVoices()
+      .filter(v => /^en/i.test(v.lang || "") || /english/i.test(v.name || ""));
+    const score = v => {
+      const fi = FAVORITE_VOICES.findIndex(f => v.name && v.name.includes(f));
+      let s = fi >= 0 ? fi : 100;
+      if (/^en[-_](GB|AU)/i.test(v.lang || "")) s -= 0.5;
+      return s;
+    };
+    return voices.sort((a, b) => score(a) - score(b));
+  } catch (e) { return []; }
+}
+function cycleVoice() {
+  const cands = voiceCandidates();
+  if (!cands.length) { speak("No voices live on this device yet!", false); return; }
+  const idx = prettyVoice ? cands.indexOf(prettyVoice) : -1;
+  const next = cands[(idx + 1) % cands.length];
+  prettyVoice = next;
+  voiceFellBack = false;
+  savedVoiceId = voiceIdOf(next);
+  try { localStorage.setItem("klausaiyanVoiceId", savedVoiceId); } catch (e) {}
+  updateVoiceBtn();
+  speak("Hello! I'm Ember the dragon. This is my voice — let's play in the Geometry Garden!", false);
 }
 
 // If the device truly has no speech voices in this browser (the Amazon Kids
@@ -4971,6 +5024,7 @@ wire("celebrateBtn", () => {
   renderMap();
   show("screenMap");
 });
+wire("voiceBtn", () => cycleVoice());
 wire("muteBtn", () => {
   muted = !muted;
   $("muteBtn").textContent = muted ? "🔇" : "🔊";
