@@ -47,8 +47,8 @@ const LEVELS = {
     celebrateText: "Ember says: Planet order, moon phases, light-years, black holes, astronauts, and Mars rovers — you are a true Star Scientist!" },
   zen: { title: "Mindfulness Journey", stages: 6, gem: "🪷", celebrateEmoji: "🪷",
     celebrateText: "Ember says: You breathed like a dragon, named your feelings, chose kindness, sent wishes of love, grew gratitude, and rested your whole body, star by star!" },
-  animals: { title: "Animal Kingdom", stages: 4, gem: "🦁", celebrateEmoji: "🦁",
-    celebrateText: "Ember says: Habitats, animal families, riddles, and baby animal names — you are a true friend of animals!" },
+  animals: { title: "Animal Kingdom", stages: 6, gem: "🦁", celebrateEmoji: "🦁",
+    celebrateText: "Ember says: Habitats, animal families, riddles, baby names, animal sounds and superpowers — you are a true friend of animals!" },
   tales: { title: "Ember's Story Tales", stages: 2, gem: "📖", celebrateEmoji: "📖",
     celebrateText: "Ember says: Two whole stories, lived by YOU! Stories teach our hearts to be brave, patient, and kind!" },
   sacred: { title: "Sacred Geometry Studio", stages: 3, gem: "🌼", celebrateEmoji: "🌼",
@@ -140,6 +140,52 @@ function saveGems() {
 }
 let gems = loadGems();
 
+// ===== Unlocked stages (Round 16): the furthest stage each player has
+// reached in each world, saved per player. Klaus asked to skip straight
+// back to the DJ stage he was on instead of replaying the early games —
+// so any stage a child has already reached becomes a door they can walk
+// through again, any time, from a jump bar under the stage.
+function unlockKey() { return "klausaiyanUnlocked_" + playerId; }
+function loadUnlocked() {
+  try { return JSON.parse(localStorage.getItem(unlockKey())) || {}; } catch (e) { return {}; }
+}
+function saveUnlocked() {
+  try { localStorage.setItem(unlockKey(), JSON.stringify(unlocked)); } catch (e) {}
+}
+let unlocked = loadUnlocked();
+const STAGE_NAMES = {
+  dj: ["Copy the Beat", "Finish the Melody", "DJ Studio", "Beat Detective", "Studio PRO", "Beat Copycat"]
+};
+function renderJumpBar(key, stage, total) {
+  const u = unlocked[key] || 0;
+  if (total <= 1 || u < 1) return;
+  const bar = document.createElement("div");
+  bar.className = "stage-jump";
+  const label = document.createElement("div");
+  label.className = "stage-jump-label";
+  label.textContent = "⏩ Jump to a stage you've already opened:";
+  bar.appendChild(label);
+  const row = document.createElement("div");
+  row.className = "stage-jump-row";
+  const names = STAGE_NAMES[key];
+  const last = Math.min(u, total - 1);
+  for (let n = 0; n <= last; n++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "stage-jump-btn" + (n === stage ? " here" : "");
+    b.textContent = (n + 1) + (names && names[n] ? " · " + names[n] : "");
+    b.addEventListener("click", () => {
+      if (!current || current.key !== key || current.stage === n) return;
+      current.stage = n;
+      fanfare();
+      renderStage();
+    });
+    row.appendChild(b);
+  }
+  bar.appendChild(row);
+  $("stageArea").appendChild(bar);
+}
+
 // ===== DJ beat library: saved beats live per player, and every beat can be
 // turned into a short code the kids can give to Mom and Dad — they type the
 // code into their own game and the exact beat plays back. No server needed.
@@ -203,6 +249,7 @@ function fanfare() { [0, 2, 4, 7].forEach((n, i) => tone(SCALE[n], i * 0.13, 0.5
 // through the installed voices for a warm, natural one (the same nice voices
 // the device uses for audiobooks), and fall back gracefully if none exist.
 let prettyVoice = null;
+let bestLocalVoice = null;
 function pickPrettyVoice() {
   try {
     const voices = speechSynthesis.getVoices();
@@ -219,22 +266,29 @@ function pickPrettyVoice() {
       "Karen", "Moira", "Tessa",     // Apple English variants
       "Google English"
     ];
-    // OFFLINE FIRST (Round 15): some voices live on the device (localService)
-    // and some stream from the internet. A network voice goes SILENT when
-    // the tablet plays offline — the chimes (generated on-device) still
-    // sing, but the voice vanishes. That was the tablet's missing voice.
-    // So: hunt the favorites among on-device voices first, and only accept
-    // a network voice when the device has no local voice at all.
+    // BELOVED VOICE FIRST (Round 16): Round 15 hunted favorites among
+    // on-device (localService) voices first, because a streaming voice goes
+    // silent when the tablet plays offline. It fixed the silence — but it
+    // also cost the children their favorite voice: the warm UK storyteller
+    // ("the Mary Poppins voice") streams, so any plain local voice beat
+    // her to the pick and she vanished. Round 16 restores her as the first
+    // choice whenever she exists on the device, and keeps Round 15's
+    // safety net underneath: we remember the best ON-DEVICE voice too,
+    // and if the beloved voice ever errors (the offline signature), the
+    // speak() error handler swaps to that local voice and retries the
+    // line — pretty online, present offline, never silent.
     const hunt = list => {
       for (const fav of favorites) {
         const v = list.find(v => v.name && v.name.includes(fav));
         if (v) return v;
       }
-      return list.find(v => /^en[-_]US/i.test(v.lang || "")) ||
+      return list.find(v => /^en[-_]GB/i.test(v.lang || "")) ||
+             list.find(v => /^en[-_]AU/i.test(v.lang || "")) ||
+             list.find(v => /^en[-_]US/i.test(v.lang || "")) ||
              list.find(v => /^en/i.test(v.lang || "")) || null;
     };
-    const locals = voices.filter(v => v.localService);
-    prettyVoice = (locals.length && hunt(locals)) || hunt(voices) || prettyVoice;
+    bestLocalVoice = hunt(voices.filter(v => v.localService));
+    prettyVoice = hunt(voices) || bestLocalVoice || prettyVoice;
     updateVoiceNote();
   } catch (e) {}
 }
@@ -304,13 +358,18 @@ function speak(text, isInstruction = false) {
       // gentle lift so they sound friendly rather than flat.
       u.pitch = prettyVoice && /google/i.test(prettyVoice.name) ? 1.02 : 1.1;
       u.onend = () => { idx += 1; nextPart(); };
-      u.onerror = () => {
-        // If the hand-picked voice itself is broken on this device, drop it
-        // and retry the whole line in the tablet's plain default voice —
-        // a plain voice beats a silent pretty one.
-        if (prettyVoice && !voiceFellBack) {
+      u.onerror = ev => {
+        // A cancel() (a new line starting) reports "interrupted"/"canceled" —
+        // that is normal traffic, not a broken voice. Just move on.
+        const err = (ev && ev.error) || "";
+        if (err === "interrupted" || err === "canceled") { idx += 1; nextPart(); return; }
+        // If the beloved streaming voice itself fails on this device (the
+        // offline signature), swap ONCE to the best on-device voice and
+        // retry the whole line in it — a plain voice beats a silent pretty
+        // one, and the swap sticks for the rest of the session.
+        if (prettyVoice && !prettyVoice.localService && !voiceFellBack) {
           voiceFellBack = true;
-          prettyVoice = null;
+          prettyVoice = bestLocalVoice || null;
           const again = lastSpeak;
           if (again) setTimeout(() => speak(again.text, again.isInstruction), 80);
           return;
@@ -424,8 +483,10 @@ function renderStage() {
     rocket: rocketStage, wizard: wizardStage, stars: starsStage,
     zen: zenStage, animals: animalsStage, tales: talesStage,
     sacred: sacredStage, play: playStage, elements: elementsStage }[key];
+  if ((unlocked[key] || 0) < stage) { unlocked[key] = stage; saveUnlocked(); }
   try { fn(stage); }
   catch (e) { $("stageMsg").textContent = "Oh no — this world got tangled! Tell Mommy to refresh the page!"; }
+  renderJumpBar(key, stage, total);
   stageAdvancing = false;
 }
 
@@ -444,6 +505,8 @@ function completeLevel() {
   const key = current.key;
   gems[key] = true;
   saveGems();
+  unlocked[key] = LEVELS[key].stages; // finishing a world opens every stage in it
+  saveUnlocked();
   fanfare();
   $("celebrateEmoji").textContent = LEVELS[key].celebrateEmoji;
   $("celebrateTitle").textContent = "You did it, " + player().hero + "!";
@@ -4610,6 +4673,25 @@ function animalsStage(stage) {
       { q: "A baby DEER is called a…?", big: "🦌", opts: [{ w: "Pup" }, { w: "Fawn" }, { w: "Joey" }], ans: "Fawn", fact: "A FAWN! And a baby kangaroo is a joey — it rides in its mother's pouch!", hint: "It has spots and wobbly legs!" }
     ]);
   }
+
+  if (stage === 4) { // Animal sounds — big, simple, voice-led (Sophia's favorite game)
+    quiz([
+      { q: "What sound does a COW make?", big: "🐮", opts: [{ w: "Moo!", e: "🔊" }, { w: "Woof!", e: "🐶" }, { w: "Roar!", e: "🦁" }], ans: "Moo!", fact: "MOO! And did you know? Cows have best friends — a special cow they love to stand beside!", hint: "It rhymes with BOO!" },
+      { q: "What sound does a HORSE make?", big: "🐴", opts: [{ w: "Oink!", e: "🐷" }, { w: "Neigh!", e: "🔊" }, { w: "Meow!", e: "🐱" }], ans: "Neigh!", fact: "NEIGH! Horses talk with their ears too — ears pointing at you means: I am listening, friend!", hint: "It rhymes with HAY — horses love hay!" },
+      { q: "What sound does a LION make?", big: "🦁", opts: [{ w: "Roar!", e: "🔊" }, { w: "Peep!", e: "🐤" }, { w: "Moo!", e: "🐮" }], ans: "Roar!", fact: "ROAR! A lion's roar is so big and strong, you can hear it from five miles away — across a whole town!", hint: "The biggest, scariest, king-of-animals sound!" },
+      { q: "What sound does an OWL make?", big: "🦉", opts: [{ w: "Quack!", e: "🦆" }, { w: "Baa!", e: "🐑" }, { w: "Hoo hoo!", e: "🔊" }], ans: "Hoo hoo!", fact: "HOO HOO! Owls fly almost silently — their soft feathers hush the air so no one hears them coming!", hint: "It sounds like asking: WHO? Whooo!" }
+    ]);
+  }
+
+  if (stage === 5) { // Animal superpowers — real record-breakers
+    quiz([
+      { q: "Which animal is the FASTEST runner on land?", big: "🏃", opts: [{ w: "Cheetah", e: "🐆" }, { w: "Turtle", e: "🐢" }, { w: "Hippo", e: "🦛" }], ans: "Cheetah", fact: "The CHEETAH! It can run as fast as a car on the highway — but only for one minute, then it needs a rest!", hint: "It has spots and it ZOOMS!" },
+      { q: "Which animal is the TALLEST in the whole world?", big: "📏", opts: [{ w: "Elephant", e: "🐘" }, { w: "Giraffe", e: "🦒" }, { w: "Bear", e: "🐻" }], ans: "Giraffe", fact: "The GIRAFFE! Its heart is extra big and strong, to pump blood all the way up that long, long neck!", hint: "Its head almost touches the treetops!" },
+      { q: "Which animal is the BIGGEST in the whole world?", big: "🌊", opts: [{ w: "Shark", e: "🦈" }, { w: "Elephant", e: "🐘" }, { w: "Blue whale", e: "🐋" }], ans: "Blue whale", fact: "The BLUE WHALE! Its tongue alone weighs as much as a whole elephant — and its heart is as big as a small car!", hint: "It lives in the ocean and it is HUGE!" },
+      { q: "Which bird can fly BACKWARDS?", big: "🐦", opts: [{ w: "Hummingbird", e: "🌺" }, { w: "Penguin", e: "🐧" }, { w: "Owl", e: "🦉" }], ans: "Hummingbird", fact: "The HUMMINGBIRD! The only bird that can fly backwards — its wings beat so fast they hum like a tiny song!", hint: "It is tiny, sparkly, and loves flowers!" },
+      { q: "Which animal can sleep STANDING UP?", big: "😴", opts: [{ w: "Frog", e: "🐸" }, { w: "Horse", e: "🐴" }, { w: "Cat", e: "🐱" }], ans: "Horse", fact: "The HORSE! Horses can lock their legs and nap standing up — and they dream lying down, just like you!", hint: "Sophia's favorite animal! It says neigh!" }
+    ]);
+  }
 }
 
 
@@ -4817,6 +4899,7 @@ function switchPlayer(id) {
   playerId = id;
   try { localStorage.setItem("klausaiyanPlayer", id); } catch (e) {}
   gems = loadGems();
+  unlocked = loadUnlocked();
   discoveredFacts = loadFacts();
   current = null;
   renderPlayerUI();
